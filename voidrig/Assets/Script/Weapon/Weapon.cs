@@ -112,15 +112,20 @@ public class Weapon : MonoBehaviour
         {
             if (currentAmmo > 0)
             {
-                SetAnimTrigger("Recoil");
+                if (animator.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Recoil")
+                {
+                    SetAnimTrigger("Recoil");
+                }
                 PlaySound(soundData.GetShootClip(activeSound));
                 burstBulletsLeft = bulletsPerBurst;
-                SetAnimTrigger("RecoilHigh");
+                //SetAnimTrigger("RecoilHigh");
                 StartCoroutine(ShootRepeatedly());
             }
             else
             {
+                SetAnimTrigger("RecoilRecover");
                 PlaySound(soundData.GetEmptyClip(activeSound));
+                animator.Play("RecoilRecover");
             }
         }
 
@@ -137,10 +142,6 @@ public class Weapon : MonoBehaviour
 
     private IEnumerator ShootRepeatedly()
     {
-        readyToShoot = false;
-
-        
-
         if (activeGun.scatter)
         {
             if (currentAmmo > 0 && !isReloading)
@@ -153,7 +154,7 @@ public class Weapon : MonoBehaviour
                 currentAmmo--; // use 1 shell
             }
 
-            //SetAnimTrigger("RecoilHigh");
+            SetAnimTrigger("RecoilHigh");
             PlaySound(soundData.GetShootClip(activeSound));
         }
         else
@@ -162,7 +163,7 @@ public class Weapon : MonoBehaviour
             while (burstBulletsLeft > 0 && currentAmmo > 0 && !isReloading)
             {
                 FireBullet();
-                //SetAnimTrigger("RecoilHigh");
+                SetAnimTrigger("RecoilHigh");
                 PlaySound(soundData.GetShootClip(activeSound));
                 burstBulletsLeft--;
 
@@ -173,8 +174,16 @@ public class Weapon : MonoBehaviour
             }
         }
 
-        
-        ResetShot();
+        if (currentShootingMode == GunData.ShootingMode.Auto && attackAction.WasReleasedThisFrame())
+        {
+            ResetShot();
+        }
+
+        if (currentShootingMode != GunData.ShootingMode.Auto)
+        {
+            ResetShot();
+        }
+
     }
 
 
@@ -253,6 +262,7 @@ public class Weapon : MonoBehaviour
         readyToShoot = true;
         allowReset = true;
         SetAnimTrigger("RecoilRecover");
+        animator.Play("Idle");
     }
 
     private void SetActiveGun(GunData.Attribute gun, SoundData.WeaponSound sound)
