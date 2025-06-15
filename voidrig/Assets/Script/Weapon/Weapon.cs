@@ -125,7 +125,7 @@ public class Weapon : MonoBehaviour
             {
                 SetAnimTrigger("RecoilRecover");
                 PlaySound(soundData.GetEmptyClip(activeSound));
-                animator.Play("RecoilRecover");
+                //animator.Play("RecoilRecover");
             }
         }
 
@@ -154,7 +154,7 @@ public class Weapon : MonoBehaviour
                 currentAmmo--; // use 1 shell
             }
 
-            SetAnimTrigger("RecoilHigh");
+            //SetAnimTrigger("RecoilHigh");
             PlaySound(soundData.GetShootClip(activeSound));
         }
         else
@@ -163,7 +163,7 @@ public class Weapon : MonoBehaviour
             while (burstBulletsLeft > 0 && currentAmmo > 0 && !isReloading)
             {
                 FireBullet();
-                SetAnimTrigger("RecoilHigh");
+                //SetAnimTrigger("RecoilHigh");
                 PlaySound(soundData.GetShootClip(activeSound));
                 burstBulletsLeft--;
 
@@ -174,7 +174,7 @@ public class Weapon : MonoBehaviour
             }
         }
 
-        if (currentShootingMode == GunData.ShootingMode.Auto && attackAction.WasReleasedThisFrame())
+        if (currentShootingMode == GunData.ShootingMode.Auto && attackAction.WasReleasedThisFrame() && currentAmmo > 0)
         {
             ResetShot();
         }
@@ -194,6 +194,8 @@ public class Weapon : MonoBehaviour
             Debug.Log(totalAmmo <= 0 ? "Completely out of ammo!" : "Magazine empty! Press reload.");
             return;
         }
+
+        SetAnimTrigger("RecoilHigh");
 
         muzzleEffect?.GetComponent<ParticleSystem>()?.Play();
 
