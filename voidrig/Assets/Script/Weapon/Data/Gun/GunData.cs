@@ -1,4 +1,5 @@
-﻿using System;
+﻿//GunData.cs
+using System;
 using UnityEngine;
 
 [Serializable]

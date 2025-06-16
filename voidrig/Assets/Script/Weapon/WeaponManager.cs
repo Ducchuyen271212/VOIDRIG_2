@@ -1,3 +1,5 @@
+//WeaponManager.cs - Extended but Compatible Version
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,26 +7,20 @@ public class WeaponManager : MonoBehaviour
 {
     public static WeaponManager Instance { get; private set; }
 
-    public GameObject weapon1;
-    public GameObject weapon2;
+    [Header("Weapon Prefabs - Add as many as you want")]
+    public List<GameObject> weaponPrefabs = new List<GameObject>();
     public GameObject player;
 
-    private bool isWeapon1Active = true;
+    private List<GameObject> instantiatedWeapons = new List<GameObject>();
+    private int currentWeaponIndex = 0;
     private bool isSwitching = false;
-
-    private float posX;
-    private float posY;
-    private float posZ;
-
 
     private PlayerInput playerInput;
     private InputAction switchWeaponAction;
 
-
     private void Awake()
     {
         playerInput = GetComponentInParent<PlayerInput>();
-
         if (Instance == null)
         {
             Instance = this;
@@ -32,61 +28,81 @@ public class WeaponManager : MonoBehaviour
         else if (Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
 
-        weapon1 = Instantiate(weapon1, transform.position, Quaternion.identity);
-        weapon2 = Instantiate(weapon2, transform.position, Quaternion.identity);
+        // Validate we have weapons
+        if (weaponPrefabs.Count == 0)
+        {
+            Debug.LogError("WeaponManager: No weapon prefabs assigned!");
+            return;
+        }
 
-        weapon1.transform.parent = player.transform;
-        weapon2.transform.parent = player.transform;
-        weapon1.transform.position = transform.position;
-        weapon2.transform.position = transform.position;
-
-        weapon1.SetActive(false);
-        weapon2.SetActive(false);
+        // Instantiate all weapons
+        foreach (GameObject weaponPrefab in weaponPrefabs)
+        {
+            if (weaponPrefab != null)
+            {
+                GameObject weapon = Instantiate(weaponPrefab, transform.position, Quaternion.identity);
+                weapon.transform.parent = player.transform;
+                weapon.transform.position = transform.position;
+                weapon.SetActive(false); // Start all disabled
+                instantiatedWeapons.Add(weapon);
+                Debug.Log($"Instantiated weapon: {weapon.name}");
+            }
+        }
     }
+
     private void Start()
     {
-       
-
         switchWeaponAction = playerInput.actions["SwitchWeapon"];
-        //Debug.Log("Heloo");
 
-        weapon1.SetActive(true);
-        //weapon1.tag = "MachineGun";
-        weapon2.SetActive(false);
-       
+        // IMPORTANT: Start with first weapon active
+        if (instantiatedWeapons.Count > 0)
+        {
+            instantiatedWeapons[0].SetActive(true);
+            currentWeaponIndex = 0;
+            Debug.Log($"Started with weapon: {instantiatedWeapons[0].name}");
+        }
     }
 
     private void Update()
     {
-        if (switchWeaponAction.WasPressedThisFrame())
+        if (switchWeaponAction.WasPressedThisFrame() && !isSwitching)
         {
             Debug.Log("Switching Weapon");
-            switchWeapon();
+            SwitchToNextWeapon();
         }
+    }
+
+    private void SwitchToNextWeapon()
+    {
+        if (instantiatedWeapons.Count <= 1) return;
+
+        isSwitching = true;
+
+        // Deactivate current weapon
+        instantiatedWeapons[currentWeaponIndex].SetActive(false);
+        Debug.Log($"Deactivated: {instantiatedWeapons[currentWeaponIndex].name}");
+
+        // Move to next weapon (cycle back to 0 if at end)
+        currentWeaponIndex = (currentWeaponIndex + 1) % instantiatedWeapons.Count;
+
+        // Activate new weapon
+        instantiatedWeapons[currentWeaponIndex].SetActive(true);
+        Debug.Log($"Switched to: {instantiatedWeapons[currentWeaponIndex].name}");
 
         isSwitching = false;
     }
 
-    private void switchWeapon()
+    // Utility methods
+    public GameObject GetCurrentWeapon()
     {
-        isSwitching = true;
-
-        if (isSwitching)
-        {
-            isWeapon1Active = !isWeapon1Active;
-        }
-       
-        if (isWeapon1Active)
-        {
-            weapon1.SetActive(false);
-            weapon2.SetActive(true);
-        }
-        else
-        {
-            weapon1.SetActive(true);
-            weapon2.SetActive(false);
-        }
+        if (currentWeaponIndex >= 0 && currentWeaponIndex < instantiatedWeapons.Count)
+            return instantiatedWeapons[currentWeaponIndex];
+        return null;
     }
+
+    public int GetCurrentWeaponIndex() => currentWeaponIndex;
+    public int GetTotalWeaponCount() => instantiatedWeapons.Count;
 }

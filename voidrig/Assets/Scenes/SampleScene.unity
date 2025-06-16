@@ -1911,6 +1911,34 @@ PrefabInstance:
       propertyPath: weapon2
       value: 
       objectReference: {fileID: 1240589833051934177, guid: 2d04aceb4596f8b42a1a807fd136daa8, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: weaponPrefabs.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 385986696648339355, guid: 30f4884ee13f26b4aa1b8f74ece3e6a1, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[1]'
+      value: 
+      objectReference: {fileID: 5427744529844689411, guid: c1eb0cda32e4e1144897ef792b2c11ea, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[2]'
+      value: 
+      objectReference: {fileID: 1240589833051934177, guid: 2d04aceb4596f8b42a1a807fd136daa8, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[3]'
+      value: 
+      objectReference: {fileID: 4464680358357733962, guid: af6cd02cfb564d5469c383b00a823d34, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[4]'
+      value: 
+      objectReference: {fileID: 7511507339947683102, guid: 7ee7e4c931e39634c84ad2916c7d9abd, type: 3}
+    - target: {fileID: 1675935230072885319, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: 'weaponPrefabs.Array.data[5]'
+      value: 
+      objectReference: {fileID: 6487819406722834100, guid: dcb9398d16630ec40a464446eeb07a1e, type: 3}
     - target: {fileID: 2159556553836310821, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: gravity
       value: -50
