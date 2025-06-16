@@ -1,3 +1,4 @@
+//GlobalRefrences.cs
 using UnityEngine;
 
 public class GlobalRefrences : MonoBehaviour
