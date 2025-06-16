@@ -110,10 +110,12 @@ public class Weapon : MonoBehaviour
 
         if (readyToShoot && isShooting)
         {
-            SetAnimTrigger("Recoil");
             if (currentAmmo > 0)
             {
-                
+                if (animator.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Recoil")
+                {
+                    SetAnimTrigger("Recoil");
+                }
                 PlaySound(soundData.GetShootClip(activeSound));
                 burstBulletsLeft = bulletsPerBurst;
                 //SetAnimTrigger("RecoilHigh");
@@ -121,7 +123,9 @@ public class Weapon : MonoBehaviour
             }
             else
             {
+                SetAnimTrigger("RecoilRecover");
                 PlaySound(soundData.GetEmptyClip(activeSound));
+                //animator.Play("RecoilRecover");
             }
         }
 
@@ -138,8 +142,6 @@ public class Weapon : MonoBehaviour
 
     private IEnumerator ShootRepeatedly()
     {
-        readyToShoot = false;
-
         if (activeGun.scatter)
         {
             if (currentAmmo > 0 && !isReloading)
@@ -152,7 +154,7 @@ public class Weapon : MonoBehaviour
                 currentAmmo--; // use 1 shell
             }
 
-            SetAnimTrigger("RecoilHigh");
+            //SetAnimTrigger("RecoilHigh");
             PlaySound(soundData.GetShootClip(activeSound));
         }
         else
@@ -161,7 +163,7 @@ public class Weapon : MonoBehaviour
             while (burstBulletsLeft > 0 && currentAmmo > 0 && !isReloading)
             {
                 FireBullet();
-                SetAnimTrigger("RecoilHigh");
+                //SetAnimTrigger("RecoilHigh");
                 PlaySound(soundData.GetShootClip(activeSound));
                 burstBulletsLeft--;
 
@@ -172,8 +174,16 @@ public class Weapon : MonoBehaviour
             }
         }
 
-        
-        ResetShot();
+        if (currentShootingMode == GunData.ShootingMode.Auto && attackAction.WasReleasedThisFrame() && currentAmmo > 0)
+        {
+            ResetShot();
+        }
+
+        if (currentShootingMode != GunData.ShootingMode.Auto)
+        {
+            ResetShot();
+        }
+
     }
 
 
@@ -184,6 +194,8 @@ public class Weapon : MonoBehaviour
             Debug.Log(totalAmmo <= 0 ? "Completely out of ammo!" : "Magazine empty! Press reload.");
             return;
         }
+
+        SetAnimTrigger("RecoilHigh");
 
         muzzleEffect?.GetComponent<ParticleSystem>()?.Play();
 
@@ -252,6 +264,7 @@ public class Weapon : MonoBehaviour
         readyToShoot = true;
         allowReset = true;
         SetAnimTrigger("RecoilRecover");
+        animator.Play("Idle");
     }
 
     private void SetActiveGun(GunData.Attribute gun, SoundData.WeaponSound sound)

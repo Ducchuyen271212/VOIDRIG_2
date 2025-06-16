@@ -45,8 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   machineGun:
-    magazineCapacity: 30
-    totalAmmo: 120
+    magazineCapacity: 240
+    totalAmmo: 1200
     damage: 3
     bulletVelocity: 180
     knockBack: 2
@@ -55,6 +55,12 @@ MonoBehaviour:
     fireRate: 0.05
     reloadTime: 1
     scatter: 0
+    spreadIntensity: 0.4
+    bulletsPerBurst: 1
+    burstFireInterval: 0.05
+    overheatThreshold: 600
+    shootingMode: 2
+    availableModes: 020000000100000000000000
   shotGun:
     magazineCapacity: 7
     totalAmmo: 28
@@ -66,6 +72,12 @@ MonoBehaviour:
     fireRate: 0.5
     reloadTime: 1
     scatter: 1
+    spreadIntensity: 8
+    bulletsPerBurst: 40
+    burstFireInterval: 0.15
+    overheatThreshold: 400
+    shootingMode: 1
+    availableModes: 01000000
   sniper:
     magazineCapacity: 5
     totalAmmo: 20
@@ -77,6 +89,12 @@ MonoBehaviour:
     fireRate: 1
     reloadTime: 2
     scatter: 0
+    spreadIntensity: 0
+    bulletsPerBurst: 1
+    burstFireInterval: 0.5
+    overheatThreshold: 10
+    shootingMode: 0
+    availableModes: 00000000
   handGun:
     magazineCapacity: 10
     totalAmmo: 40
@@ -88,3 +106,43 @@ MonoBehaviour:
     fireRate: 0.1
     reloadTime: 1
     scatter: 0
+    spreadIntensity: 0.1
+    bulletsPerBurst: 1
+    burstFireInterval: 0.15
+    overheatThreshold: 100
+    shootingMode: 0
+    availableModes: 0000000002000000
+  smg:
+    magazineCapacity: 45
+    totalAmmo: 270
+    damage: 5
+    bulletVelocity: 160
+    knockBack: 1
+    bulletLifeTime: 1.5
+    accuracy: 0.6
+    fireRate: 0.07
+    reloadTime: 1.2
+    scatter: 0
+    spreadIntensity: 0.6
+    bulletsPerBurst: 1
+    burstFireInterval: 0.05
+    overheatThreshold: 600
+    shootingMode: 2
+    availableModes: 0200000001000000
+  burstRifle:
+    magazineCapacity: 30
+    totalAmmo: 180
+    damage: 5
+    bulletVelocity: 220
+    knockBack: 2
+    bulletLifeTime: 2
+    accuracy: 0.9
+    fireRate: 0.3
+    reloadTime: 1.5
+    scatter: 0
+    spreadIntensity: 0.15
+    bulletsPerBurst: 3
+    burstFireInterval: 0.1
+    overheatThreshold: 600
+    shootingMode: 1
+    availableModes: 0100000000000000
