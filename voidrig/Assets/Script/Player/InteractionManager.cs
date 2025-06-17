@@ -5,13 +5,17 @@ using UnityEngine.InputSystem;
 public class InteractionManager : MonoBehaviour
 {
     public static InteractionManager Instance { get; private set; }
-    public Weapon hoveredWeapon = null;
 
+    [Header("Interaction Settings")]
+    public float maxInteractionDistance = 5f; // Max distance to highlight weapons
+
+    public Weapon hoveredWeapon = null; // Currently highlighted weapon
     private PlayerInput playerInput;
     private InputAction interactAction;
 
     private void Awake()
     {
+        // Singleton setup
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -24,62 +28,90 @@ public class InteractionManager : MonoBehaviour
 
     private void Start()
     {
-        // Get PlayerInput component (should be on Player or parent)
+        // Get PlayerInput and setup interact action
         playerInput = FindFirstObjectByType<PlayerInput>();
-
         if (playerInput != null)
         {
             interactAction = playerInput.actions["Interact"];
             interactAction?.Enable();
         }
-        else
-        {
-            Debug.LogError("PlayerInput not found! Make sure it exists in the scene.");
-        }
     }
 
     private void Update()
     {
+        // Raycast from camera center
         Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        RaycastHit hitInfo;
 
-        if (Physics.Raycast(ray, out hitInfo))
+        if (Physics.Raycast(ray, out RaycastHit hit, maxInteractionDistance))
         {
-            GameObject objectHitByRaycast = hitInfo.transform.gameObject;
-            if (objectHitByRaycast.GetComponent<Weapon>())
-            {
-                hoveredWeapon = objectHitByRaycast.gameObject.GetComponent<Weapon>();
-                hoveredWeapon.GetComponent<Outline>().enabled = true;
+            // Check if hit object is a weapon
+            Weapon weaponComponent = hit.transform.GetComponent<Weapon>();
 
-                // Changed from KeyCode.E to Input System
+            if (weaponComponent != null && IsWeaponOnGround(weaponComponent))
+            {
+                // Highlight weapon
+                HighlightWeapon(weaponComponent);
+
+                // Handle pickup input
                 if (interactAction?.WasPressedThisFrame() == true)
                 {
-                    WeaponManager.Instance.PickupWeapon(objectHitByRaycast.gameObject);
+                    WeaponManager.Instance.PickupWeapon(hit.transform.gameObject);
                 }
             }
             else
             {
-                if (hoveredWeapon)
-                {
-                    hoveredWeapon.GetComponent<Outline>().enabled = false;
-                    hoveredWeapon = null; // Clear the reference
-                }
+                ClearHighlight();
             }
         }
         else
         {
-            // Clear hover when not looking at anything
-            if (hoveredWeapon)
+            // Nothing in range
+            ClearHighlight();
+        }
+    }
+
+    // Check if weapon is on ground (not in player's hands)
+    private bool IsWeaponOnGround(Weapon weapon)
+    {
+        return weapon.transform.parent == null ||
+               !weapon.transform.parent.name.Contains("Slot");
+    }
+
+    // Highlight the weapon
+    private void HighlightWeapon(Weapon weapon)
+    {
+        // Clear previous highlight
+        if (hoveredWeapon != null && hoveredWeapon != weapon)
+        {
+            ClearHighlight();
+        }
+
+        // Set new highlight
+        hoveredWeapon = weapon;
+        Outline outline = weapon.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = true;
+        }
+    }
+
+    // Clear weapon highlight
+    private void ClearHighlight()
+    {
+        if (hoveredWeapon != null)
+        {
+            Outline outline = hoveredWeapon.GetComponent<Outline>();
+            if (outline != null)
             {
-                hoveredWeapon.GetComponent<Outline>().enabled = false;
-                hoveredWeapon = null;
+                outline.enabled = false;
             }
+            hoveredWeapon = null;
         }
     }
 
     private void OnDestroy()
     {
-        // Clean up
+        // Clean up input action
         interactAction?.Disable();
     }
 }
