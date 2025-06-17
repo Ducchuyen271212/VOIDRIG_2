@@ -165,7 +165,7 @@ public class Weapon : MonoBehaviour
             ? attackAction.IsPressed()
             : attackAction.WasPressedThisFrame();
 
-        if (readyToShoot && isShooting && canShootByFireRate)
+        if (readyToShoot && isShooting && canShootByFireRate && !isReloading)
         {
             if (currentAmmo > 0)
             {
@@ -403,9 +403,11 @@ public class Weapon : MonoBehaviour
         Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(100);
         Vector3 direction = (targetPoint - bulletSpawn.position).normalized;
 
-        // Calculate final spread based on both spreadIntensity and accuracy
+        // Calculate final spread: base spread modified by accuracy
         // Lower accuracy = more spread, Higher accuracy = less spread
-        float finalSpread = spreadIntensity * (1f - activeGun.accuracy);
+        // Multiply by (2 - accuracy) so low accuracy makes spread worse
+        float accuracyMultiplier = (2f - activeGun.accuracy) * 5f; // Multiply by 5 to make accuracy effect strong
+        float finalSpread = spreadIntensity * accuracyMultiplier;
 
         Quaternion spreadRotation = Quaternion.Euler(
             Random.Range(-finalSpread, finalSpread),
