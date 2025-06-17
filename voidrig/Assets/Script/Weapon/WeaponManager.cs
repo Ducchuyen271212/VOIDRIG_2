@@ -1,4 +1,4 @@
-//WeaponManager.cs - Extended but Compatible Version
+//WeaponManager.cs
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,6 +10,9 @@ public class WeaponManager : MonoBehaviour
     [Header("Weapon Prefabs - Add as many as you want")]
     public List<GameObject> weaponPrefabs = new List<GameObject>();
     public GameObject player;
+
+    [Header("Centralized Data")]
+    public GameObject gunDataHolder; // Reference to the GameObject with GunData script
 
     private List<GameObject> instantiatedWeapons = new List<GameObject>();
     private int currentWeaponIndex = 0;
@@ -31,6 +34,24 @@ public class WeaponManager : MonoBehaviour
             return;
         }
 
+        // Find GunDataHolder if not assigned
+        if (gunDataHolder == null)
+        {
+            gunDataHolder = GameObject.Find("GunDataHolder");
+            if (gunDataHolder == null)
+            {
+                Debug.LogError("WeaponManager: No GunDataHolder found! Please assign one or add it to the scene.");
+                return;
+            }
+        }
+
+        // Validate that the gunDataHolder has a GunData component
+        if (gunDataHolder.GetComponent<GunData>() == null)
+        {
+            Debug.LogError("WeaponManager: GunDataHolder GameObject doesn't have a GunData component!");
+            return;
+        }
+
         // Validate we have weapons
         if (weaponPrefabs.Count == 0)
         {
@@ -47,8 +68,16 @@ public class WeaponManager : MonoBehaviour
                 weapon.transform.parent = player.transform;
                 weapon.transform.position = transform.position;
                 weapon.SetActive(false); // Start all disabled
+
+                // IMPORTANT: Set the centralized gun data holder for each weapon
+                Weapon weaponScript = weapon.GetComponent<Weapon>();
+                if (weaponScript != null)
+                {
+                    weaponScript.SetGunDataHolder(gunDataHolder);
+                }
+
                 instantiatedWeapons.Add(weapon);
-                Debug.Log($"Instantiated weapon: {weapon.name}");
+                Debug.Log($"Instantiated weapon: {weapon.name} with centralized data");
             }
         }
     }

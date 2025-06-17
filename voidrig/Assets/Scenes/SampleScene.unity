@@ -378,7 +378,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 74c7b8e3ed8d60740ad629198f468a2e, type: 2}
+  - {fileID: 2100000, guid: ef69b84a48b60d24b8833d76a39a50f1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -720,7 +720,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 254670194243326259, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.3
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 254670194243326259, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: m_LocalPosition.y
@@ -876,39 +876,63 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: smg.damage
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: smg.accuracy
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: sniper.damage
-      value: 10000
-      objectReference: {fileID: 0}
-    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: shotGun.damage
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: handGun.accuracy
-      value: 0.75
-      objectReference: {fileID: 0}
-    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: burstRifle.damage
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: smg.accuracy
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: smg.totalAmmo
+      value: 160
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: sniper.damage
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: handGun.damage
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: shotGun.damage
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: sniper.accuracy
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: handGun.accuracy
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: shotGun.accuracy
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: burstRifle.damage
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: machineGun.damage
-      value: 0.5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: shotGun.totalAmmo
       value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
-      propertyPath: machineGun.fireRate
+      propertyPath: burstRifle.accuracy
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: machineGun.accuracy
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: machineGun.fireRate
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: machineGun.totalAmmo
@@ -916,7 +940,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: smg.overheatThreshold
-      value: 60
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: sniper.bulletVelocity
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: handGun.bulletVelocity
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: shotGun.bulletVelocity
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: handGun.spreadIntensity
@@ -939,12 +975,20 @@ PrefabInstance:
       value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: handGun.overheatThreshold
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      propertyPath: machineGun.bulletLifeTime
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: machineGun.bulletVelocity
       value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: shotGun.overheatThreshold
-      value: 400
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: burstRifle.magazineCapacity
@@ -956,15 +1000,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: burstRifle.overheatThreshold
-      value: 400
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: machineGun.burstFireInterval
-      value: 0.5
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 9030779590269219304, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       propertyPath: machineGun.overheatThreshold
-      value: 600
+      value: 200
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -988,8 +1032,36 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 480577727629032567, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
       propertyPath: m_Name
-      value: Ground
+      value: TestingMap
       objectReference: {fileID: 0}
+    - target: {fileID: 1045242557266219656, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: m_Name
+      value: Wall (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169949884477758629, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c83700c3ba5cf5e42a8af018f6fd489a, type: 2}
+    - target: {fileID: 1699645435060529817, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c292d8b53c67f6940931191518ce7ea9, type: 2}
+    - target: {fileID: 2196247466823615185, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c292d8b53c67f6940931191518ce7ea9, type: 2}
+    - target: {fileID: 4152563520893363774, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c292d8b53c67f6940931191518ce7ea9, type: 2}
+    - target: {fileID: 4235187196829830308, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c292d8b53c67f6940931191518ce7ea9, type: 2}
+    - target: {fileID: 8078073252007836807, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c292d8b53c67f6940931191518ce7ea9, type: 2}
     - target: {fileID: 8867137260419553004, guid: a3a6f62f590b1bf43b8718dd21325400, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.9111586

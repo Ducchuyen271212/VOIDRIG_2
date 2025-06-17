@@ -1,4 +1,4 @@
-//Weapon.cs - Fixed Version Based on Your Original
+//Weapon.cs
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,7 +11,7 @@ public class Weapon : MonoBehaviour
     public GameObject muzzleEffect;
 
     [Header("Data")]
-    [SerializeField] private GunData gunData;
+    [SerializeField] private GameObject gunDataHolder; // Reference to GameObject with GunData script
     [SerializeField] private SoundData soundData;
 
     private GunData.Attribute activeGun;
@@ -38,7 +38,7 @@ public class Weapon : MonoBehaviour
     private bool allowReset = true;
     private bool isReloading = false;
 
-    // ADDED: Fire rate control to prevent rapid fire exploits
+    // Fire rate control to prevent rapid fire exploits
     private float lastShotTime = 0f;
 
     private PlayerInput playerInput;
@@ -58,18 +58,14 @@ public class Weapon : MonoBehaviour
 
     private void Start()
     {
-        switch (gameObject.tag)
+        // Initialize weapon data if gunDataHolder is already set
+        if (gunDataHolder != null)
         {
-            case "MachineGun": SetActiveGun(gunData.machineGun, soundData.machineGun); break;
-            case "ShotGun": SetActiveGun(gunData.shotGun, soundData.shotGun); break;
-            case "Sniper": SetActiveGun(gunData.sniper, soundData.sniper); break;
-            case "HandGun": SetActiveGun(gunData.handGun, soundData.handGun); break;
-            case "SMG": SetActiveGun(gunData.smg, soundData.smg); break;
-            case "BurstRifle": SetActiveGun(gunData.burstRifle, soundData.burstRifle); break;
-            default:
-                Debug.LogWarning("Unknown weapon tag: " + gameObject.tag + ". Defaulting to MachineGun.");
-                SetActiveGun(gunData.machineGun, soundData.machineGun);
-                break;
+            InitializeWeaponData();
+        }
+        else
+        {
+            Debug.LogWarning($"GunDataHolder not set for weapon: {gameObject.name}. Will be set by WeaponManager.");
         }
     }
 
@@ -90,7 +86,7 @@ public class Weapon : MonoBehaviour
         reloadAction.Enable();
         switchModeAction.Enable();
 
-        // ADDED: Reset weapon state when weapon becomes active
+        // Reset weapon state when weapon becomes active
         ResetWeaponState();
     }
 
@@ -99,7 +95,50 @@ public class Weapon : MonoBehaviour
         // Don't disable actions as they're shared between weapons
     }
 
-    // ADDED: Reset state when weapon becomes active to fix switching issues
+    // Method to set gun data holder from WeaponManager
+    public void SetGunDataHolder(GameObject holder)
+    {
+        gunDataHolder = holder;
+
+        // Re-initialize the weapon with the new data
+        if (gunDataHolder != null)
+        {
+            InitializeWeaponData();
+        }
+    }
+
+    // Separate method to initialize weapon data
+    private void InitializeWeaponData()
+    {
+        if (gunDataHolder == null)
+        {
+            Debug.LogError($"GunDataHolder not set for weapon: {gameObject.name}");
+            return;
+        }
+
+        GunData gunData = gunDataHolder.GetComponent<GunData>();
+        if (gunData == null)
+        {
+            Debug.LogError($"GunData component not found on GunDataHolder for weapon: {gameObject.name}");
+            return;
+        }
+
+        switch (gameObject.tag)
+        {
+            case "MachineGun": SetActiveGun(gunData.machineGun, soundData.machineGun); break;
+            case "ShotGun": SetActiveGun(gunData.shotGun, soundData.shotGun); break;
+            case "Sniper": SetActiveGun(gunData.sniper, soundData.sniper); break;
+            case "HandGun": SetActiveGun(gunData.handGun, soundData.handGun); break;
+            case "SMG": SetActiveGun(gunData.smg, soundData.smg); break;
+            case "BurstRifle": SetActiveGun(gunData.burstRifle, soundData.burstRifle); break;
+            default:
+                Debug.LogWarning("Unknown weapon tag: " + gameObject.tag + ". Defaulting to MachineGun.");
+                SetActiveGun(gunData.machineGun, soundData.machineGun);
+                break;
+        }
+    }
+
+    // Reset state when weapon becomes active to fix switching issues
     private void ResetWeaponState()
     {
         readyToShoot = true;
@@ -119,7 +158,7 @@ public class Weapon : MonoBehaviour
 
     private void Update()
     {
-        // ADDED: Fire rate control - prevent shooting faster than fireRate allows
+        // Fire rate control - prevent shooting faster than fireRate allows
         bool canShootByFireRate = Time.time >= lastShotTime + fireRate;
 
         isShooting = currentShootingMode == GunData.ShootingMode.Auto
@@ -132,7 +171,7 @@ public class Weapon : MonoBehaviour
             {
                 lastShotTime = Time.time; // Track when we last shot
 
-                // FIXED: Don't play sound here for burst weapons - let each bullet play its own sound
+                // Don't play sound here for burst weapons - let each bullet play its own sound
                 if (activeGun.scatter || currentShootingMode == GunData.ShootingMode.Single)
                 {
                     // Play sound once for shotgun or single shots
@@ -159,7 +198,7 @@ public class Weapon : MonoBehaviour
             TryReload();
         }
 
-        // ADDED: Mode switching input handling
+        // Mode switching input handling
         if (switchModeAction.WasPressedThisFrame())
         {
             SwitchMode();
@@ -173,7 +212,7 @@ public class Weapon : MonoBehaviour
 
     private IEnumerator ShootRepeatedly()
     {
-        // FIXED: Only disable readyToShoot for non-auto weapons
+        // Only disable readyToShoot for non-auto weapons
         if (currentShootingMode != GunData.ShootingMode.Auto)
         {
             readyToShoot = false;
@@ -197,7 +236,7 @@ public class Weapon : MonoBehaviour
             {
                 FireBullet();
 
-                // FIXED: Play sound for each bullet in burst/auto mode
+                // Play sound for each bullet in burst/auto mode
                 if (currentShootingMode == GunData.ShootingMode.Burst || currentShootingMode == GunData.ShootingMode.Auto)
                 {
                     PlaySound(soundData.GetShootClip(activeSound));
@@ -212,15 +251,22 @@ public class Weapon : MonoBehaviour
             }
         }
 
-        // FIXED: Better auto-fire handling
+        // Handle different weapon types differently
         if (currentShootingMode == GunData.ShootingMode.Auto)
         {
-            // For auto weapons, only reset if button was released OR out of ammo
+            // For auto weapons, only reset when stopping
             if (attackAction.WasReleasedThisFrame() || currentAmmo <= 0)
             {
                 ResetShot();
             }
-            // If still holding and have ammo, don't reset - let it continue
+            else
+            {
+                // Just reset animation to idle without triggering RecoilRecover
+                if (animator != null)
+                {
+                    animator.Play("Idle", 0, 0f);
+                }
+            }
         }
         else
         {
@@ -303,10 +349,10 @@ public class Weapon : MonoBehaviour
         allowReset = true;
         SetAnimTrigger("RecoilRecover");
 
-        // FIXED: Use the same approach as your original but force the transition
+        // Force immediate transition to Idle
         if (animator != null)
         {
-            animator.Play("Idle", 0, 0f); // Force immediate transition to Idle
+            animator.Play("Idle", 0, 0f);
         }
     }
 
@@ -357,10 +403,13 @@ public class Weapon : MonoBehaviour
         Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(100);
         Vector3 direction = (targetPoint - bulletSpawn.position).normalized;
 
-        float spreadAngle = spreadIntensity;
+        // Calculate final spread based on both spreadIntensity and accuracy
+        // Lower accuracy = more spread, Higher accuracy = less spread
+        float finalSpread = spreadIntensity * (1f - activeGun.accuracy);
+
         Quaternion spreadRotation = Quaternion.Euler(
-            Random.Range(-spreadAngle, spreadAngle),
-            Random.Range(-spreadAngle, spreadAngle),
+            Random.Range(-finalSpread, finalSpread),
+            Random.Range(-finalSpread, finalSpread),
             0
         );
 
