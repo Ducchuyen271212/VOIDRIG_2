@@ -127,6 +127,9 @@ public class WeaponManager : MonoBehaviour
     // Deactivate all weapons and clear UI
     private void DeactivateAllWeapons()
     {
+        // Stop aiming when switching weapons
+        AimingManager.Instance?.ForceStopAiming();
+
         foreach (GameObject slot in weaponSlots)
         {
             if (slot.transform.childCount > 0)

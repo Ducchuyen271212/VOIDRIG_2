@@ -4935,7 +4935,7 @@ Transform:
   m_GameObject: {fileID: 8219386140765290716}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.03172, y: 30.5, z: 6.059}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4981,7 +4981,7 @@ MonoBehaviour:
   muzzleEffect: {fileID: 5991849138798556787}
   gunDataHolder: {fileID: 431731272966727561, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
   soundData: {fileID: 11400000, guid: 431cca0410cca16449af35e667cc0c7e, type: 2}
-  spawnPosition: {x: 0, y: -2, z: 0}
+  spawnPosition: {x: 0, y: -0.6, z: 0}
   spawnRotation: {x: 0, y: 0, z: 0}
   isActiveWeapon: 0
 --- !u!95 &2230348704041427253

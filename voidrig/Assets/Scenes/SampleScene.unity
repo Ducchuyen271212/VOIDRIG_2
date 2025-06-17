@@ -229,7 +229,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
       propertyPath: handGun.bulletLifeTime
-      value: 0.1
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
       propertyPath: handGun.bulletVelocity
@@ -284,6 +284,18 @@ PrefabInstance:
       value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: handGun.aimPositionOffset.x
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: handGun.aimPositionOffset.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: handGun.aimPositionOffset.z
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
       propertyPath: machineGun.magazineCapacity
       value: 240
       objectReference: {fileID: 0}
@@ -294,6 +306,30 @@ PrefabInstance:
     - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
       propertyPath: machineGun.overheatThreshold
       value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimPositionOffset.x
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimPositionOffset.y
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimPositionOffset.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimRotationOffset.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimRotationOffset.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5842943345116383807, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
+      propertyPath: burstRifle.aimRotationOffset.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6963640916526902754, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
       propertyPath: m_LocalScale.y
@@ -758,6 +794,55 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f1d9fdd0e003534894a8d2b92682d39, type: 3}
+--- !u!1 &1611787983
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1611787984}
+  - component: {fileID: 1611787985}
+  m_Layer: 0
+  m_Name: AimingManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1611787984
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611787983}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -22.821861, y: -2.2832298, z: -18.979279}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1143589502}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1611787985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611787983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180ad0c418d2f6c4d87f1958232d51f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  aimSpeed: 8
+  aimMouseSensitivityMultiplier: 0.5
+  normalCrosshair: {fileID: 0}
+  aimCrosshair: {fileID: 0}
+  enableDebugLogs: 0
 --- !u!1 &1728490028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1669,6 +1754,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3429162539685989681, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1107829766}
+    - targetCorrespondingSourceObject: {fileID: 3429162539685989681, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1611787984}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1104d01536557c04eb86e514ccfe50eb, type: 3}
 --- !u!1001 &5190187082540756395

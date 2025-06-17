@@ -31,7 +31,14 @@ public class GunData : MonoBehaviour
         public int bulletsPerBurst;
         public float burstFireInterval;
 
-        public float overheatThreshold; // Added
+        public float overheatThreshold;
+
+        // Aiming settings
+        public bool canAim; // Can this weapon aim?
+        public float aimFOV; // Field of view when aiming
+        public float aimAccuracyMultiplier; // How much better accuracy when aiming
+        public Vector3 aimPositionOffset; // Where weapon moves when aiming
+        public Vector3 aimRotationOffset; // How weapon rotates when aiming
 
         public ShootingMode shootingMode;
         public ShootingMode[] availableModes;
@@ -53,6 +60,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 1,
         burstFireInterval = 0.05f,
         overheatThreshold = 600f,
+        // Aiming settings - moderate zoom
+        canAim = true,
+        aimFOV = 50f, // 10 degrees zoom from 60
+        aimAccuracyMultiplier = 0.4f,
+        aimPositionOffset = new Vector3(0, -0.02f, 0.15f), // Slight forward and up
+        aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Auto,
         availableModes = new ShootingMode[]
         { ShootingMode.Auto, ShootingMode.Burst, ShootingMode.Single }
@@ -74,6 +87,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 40,
         burstFireInterval = 0.15f,
         overheatThreshold = 400f,
+        // Aiming settings - shotguns typically don't aim down sights
+        canAim = false,
+        aimFOV = 60f,
+        aimAccuracyMultiplier = 1f,
+        aimPositionOffset = Vector3.zero,
+        aimRotationOffset = Vector3.zero,
         shootingMode = ShootingMode.Burst,
         availableModes = new ShootingMode[]
         { ShootingMode.Burst }
@@ -95,6 +114,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 1,
         burstFireInterval = 0.5f,
         overheatThreshold = 10f,
+        // Aiming settings - sniper scope positioning
+        canAim = true,
+        aimFOV = 30f, // 30 degrees zoom from 60 - significant but not extreme
+        aimAccuracyMultiplier = 0.1f,
+        aimPositionOffset = new Vector3(0, 0.1f, 0.4f), // Bring scope to eye level
+        aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Single,
         availableModes = new ShootingMode[]
         { ShootingMode.Single }
@@ -116,6 +141,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 1,
         burstFireInterval = 0.15f,
         overheatThreshold = 100f,
+        // Aiming settings - handgun iron sights
+        canAim = true,
+        aimFOV = 48f, // 12 degrees zoom from 60
+        aimAccuracyMultiplier = 0.5f,
+        aimPositionOffset = new Vector3(0, 0.05f, 0.35f), // Bring gun up and forward for iron sights
+        aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Single,
         availableModes = new ShootingMode[]
         { ShootingMode.Single, ShootingMode.Auto }
@@ -137,6 +168,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 1,
         burstFireInterval = 0.05f,
         overheatThreshold = 600f,
+        // Aiming settings - SMG close quarters
+        canAim = true,
+        aimFOV = 52f, // 8 degrees zoom from 60
+        aimAccuracyMultiplier = 0.7f,
+        aimPositionOffset = new Vector3(0, 0.02f, 0.2f), // Slight raise for better sight picture
+        aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Auto,
         availableModes = new ShootingMode[]
         { ShootingMode.Auto, ShootingMode.Burst }
@@ -158,6 +195,12 @@ public class GunData : MonoBehaviour
         bulletsPerBurst = 3,
         burstFireInterval = 0.1f,
         overheatThreshold = 600f,
+        // Aiming settings - rifle with scope/sights
+        canAim = true,
+        aimFOV = 40f, // 20 degrees zoom from 60
+        aimAccuracyMultiplier = 0.3f,
+        aimPositionOffset = new Vector3(0, 0.08f, 0.32f), // Bring rifle up for scope alignment
+        aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Burst,
         availableModes = new ShootingMode[]
         { ShootingMode.Burst, ShootingMode.Single }
