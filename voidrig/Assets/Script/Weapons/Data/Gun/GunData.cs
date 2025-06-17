@@ -41,7 +41,7 @@ public class GunData : MonoBehaviour
     {
         magazineCapacity = 240,
         totalAmmo = 1200,
-        damage = 1f,
+        damage = 3f,
         bulletVelocity = 180f,
         knockBack = 2f,
         bulletLifeTime = 2f,
@@ -60,9 +60,9 @@ public class GunData : MonoBehaviour
 
     public Attribute shotGun = new Attribute
     {
-        magazineCapacity = 200,
-        totalAmmo = 1000,
-        damage = 5f,
+        magazineCapacity = 7,
+        totalAmmo = 28,
+        damage = 1f,
         bulletVelocity = 180f,
         knockBack = 10f,
         bulletLifeTime = 0.5f,
@@ -83,7 +83,7 @@ public class GunData : MonoBehaviour
     {
         magazineCapacity = 5,
         totalAmmo = 20,
-        damage = 90f,
+        damage = 10f,
         bulletVelocity = 540f,
         knockBack = 1f,
         bulletLifeTime = 3f,

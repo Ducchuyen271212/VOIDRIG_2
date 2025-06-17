@@ -7,16 +7,13 @@ public class WeaponManager : MonoBehaviour
 {
     public static WeaponManager Instance { get; private set; }
 
-    [Header("Weapon Prefabs - Add as many as you want")]
-    public List<GameObject> weaponPrefabs = new List<GameObject>();
+    [Header("Weapon Slots")]
+    public List<GameObject> weaponSlots;
+    public GameObject activeWeaponSlot;
+
+    [Header("References")]
     public GameObject player;
-
-    [Header("Centralized Data")]
-    public GameObject gunDataHolder; // Reference to the GameObject with GunData script
-
-    private List<GameObject> instantiatedWeapons = new List<GameObject>();
-    private int currentWeaponIndex = 0;
-    private bool isSwitching = false;
+    public GameObject gunDataHolder;
 
     private PlayerInput playerInput;
     private InputAction switchWeaponAction;
@@ -40,98 +37,277 @@ public class WeaponManager : MonoBehaviour
             gunDataHolder = GameObject.Find("GunDataHolder");
             if (gunDataHolder == null)
             {
-                Debug.LogError("WeaponManager: No GunDataHolder found! Please assign one or add it to the scene.");
+                Debug.LogError("WeaponManager: No GunDataHolder found!");
                 return;
             }
         }
 
-        // Validate that the gunDataHolder has a GunData component
         if (gunDataHolder.GetComponent<GunData>() == null)
         {
             Debug.LogError("WeaponManager: GunDataHolder GameObject doesn't have a GunData component!");
             return;
         }
-
-        // Validate we have weapons
-        if (weaponPrefabs.Count == 0)
-        {
-            Debug.LogError("WeaponManager: No weapon prefabs assigned!");
-            return;
-        }
-
-        // Instantiate all weapons
-        foreach (GameObject weaponPrefab in weaponPrefabs)
-        {
-            if (weaponPrefab != null)
-            {
-                GameObject weapon = Instantiate(weaponPrefab, transform.position, Quaternion.identity);
-                weapon.transform.parent = player.transform;
-                weapon.transform.position = transform.position;
-                weapon.SetActive(false); // Start all disabled
-
-                // IMPORTANT: Set the centralized gun data holder for each weapon
-                Weapon weaponScript = weapon.GetComponent<Weapon>();
-                if (weaponScript != null)
-                {
-                    weaponScript.SetGunDataHolder(gunDataHolder);
-                }
-
-                instantiatedWeapons.Add(weapon);
-                Debug.Log($"Instantiated weapon: {weapon.name} with centralized data");
-            }
-        }
     }
 
     private void Start()
     {
-        switchWeaponAction = playerInput.actions["SwitchWeapon"];
-
-        // IMPORTANT: Start with first weapon active
-        if (instantiatedWeapons.Count > 0)
+        if (weaponSlots.Count > 0)
         {
-            instantiatedWeapons[0].SetActive(true);
-            currentWeaponIndex = 0;
-            Debug.Log($"Started with weapon: {instantiatedWeapons[0].name}");
+            activeWeaponSlot = weaponSlots[0];
+        }
+
+        if (playerInput?.actions != null)
+        {
+            switchWeaponAction = playerInput.actions["SwitchWeapon"];
         }
     }
 
     private void Update()
     {
-        if (switchWeaponAction.WasPressedThisFrame() && !isSwitching)
+        // Manage weapon slot visibility and activation
+        foreach (GameObject weaponSlot in weaponSlots)
         {
-            Debug.Log("Switching Weapon");
-            SwitchToNextWeapon();
+            if (weaponSlot == activeWeaponSlot)
+            {
+                weaponSlot.SetActive(true);
+
+                // Activate weapon in current slot
+                if (weaponSlot.transform.childCount > 0)
+                {
+                    GameObject activeWeapon = weaponSlot.transform.GetChild(0).gameObject;
+                    Weapon activeWeaponScript = activeWeapon.GetComponent<Weapon>();
+                    if (activeWeaponScript != null)
+                    {
+                        activeWeaponScript.isActiveWeapon = true;
+                    }
+                }
+            }
+            else
+            {
+                weaponSlot.SetActive(false);
+
+                // Deactivate weapons in inactive slots
+                if (weaponSlot.transform.childCount > 0)
+                {
+                    GameObject inactiveWeapon = weaponSlot.transform.GetChild(0).gameObject;
+                    Weapon inactiveWeaponScript = inactiveWeapon.GetComponent<Weapon>();
+                    if (inactiveWeaponScript != null)
+                    {
+                        inactiveWeaponScript.isActiveWeapon = false;
+                    }
+                }
+            }
+        }
+
+        // Handle weapon switching
+        if (switchWeaponAction?.WasPressedThisFrame() == true)
+        {
+            SwitchToNextSlot();
+        }
+
+        // Number key switching
+        if (Input.GetKeyDown(KeyCode.Alpha1)) slot1();
+        if (Input.GetKeyDown(KeyCode.Alpha2)) slot2();
+        if (Input.GetKeyDown(KeyCode.Alpha3)) slot3();
+        if (Input.GetKeyDown(KeyCode.Alpha4)) slot4();
+        if (Input.GetKeyDown(KeyCode.Alpha5)) slot5();
+
+        // Drop weapon
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            DropItem();
         }
     }
 
-    private void SwitchToNextWeapon()
+    // Slot switching methods
+    public void slot1() { SwitchToSlot(0); }
+    public void slot2() { SwitchToSlot(1); }
+    public void slot3() { SwitchToSlot(2); }
+    public void slot4() { SwitchToSlot(3); }
+    public void slot5() { SwitchToSlot(4); }
+
+    private void SwitchToSlot(int slotIndex)
     {
-        if (instantiatedWeapons.Count <= 1) return;
+        if (slotIndex >= 0 && slotIndex < weaponSlots.Count)
+        {
+            DeactivateAllWeapons();
+            activeWeaponSlot = weaponSlots[slotIndex];
+            Debug.Log($"Switched to weapon slot {slotIndex + 1}");
+        }
+    }
 
-        isSwitching = true;
+    private void SwitchToNextSlot()
+    {
+        if (weaponSlots.Count <= 1) return;
 
-        // Deactivate current weapon
-        instantiatedWeapons[currentWeaponIndex].SetActive(false);
-        Debug.Log($"Deactivated: {instantiatedWeapons[currentWeaponIndex].name}");
+        DeactivateAllWeapons();
+        int currentSlotIndex = weaponSlots.IndexOf(activeWeaponSlot);
+        int nextSlotIndex = (currentSlotIndex + 1) % weaponSlots.Count;
+        activeWeaponSlot = weaponSlots[nextSlotIndex];
 
-        // Move to next weapon (cycle back to 0 if at end)
-        currentWeaponIndex = (currentWeaponIndex + 1) % instantiatedWeapons.Count;
+        Debug.Log($"Switched to weapon slot {nextSlotIndex + 1}");
+    }
 
-        // Activate new weapon
-        instantiatedWeapons[currentWeaponIndex].SetActive(true);
-        Debug.Log($"Switched to: {instantiatedWeapons[currentWeaponIndex].name}");
+    private void DeactivateAllWeapons()
+    {
+        foreach (GameObject weaponSlot in weaponSlots)
+        {
+            if (weaponSlot.transform.childCount > 0)
+            {
+                GameObject weapon = weaponSlot.transform.GetChild(0).gameObject;
+                Weapon weaponScript = weapon.GetComponent<Weapon>();
+                if (weaponScript != null)
+                {
+                    weaponScript.isActiveWeapon = false;
+                }
+            }
+        }
 
-        isSwitching = false;
+        // Clear ammo display when no weapon is active
+        if (AmmoManager.Instance?.ammoDisplay != null)
+        {
+            AmmoManager.Instance.ammoDisplay.text = "-- / --";
+        }
+    }
+
+    public void DropItem()
+    {
+        if (!HasWeaponInActiveSlot())
+        {
+            Debug.Log("No weapon to drop!");
+            return;
+        }
+
+        GameObject weaponToDrop = GetCurrentWeapon();
+        Weapon weaponScript = weaponToDrop.GetComponent<Weapon>();
+
+        // Deactivate weapon
+        if (weaponScript != null)
+        {
+            weaponScript.isActiveWeapon = false;
+        }
+
+        // Remove from slot
+        weaponToDrop.transform.SetParent(null);
+
+        // Position in front of player
+        Vector3 dropPosition = player.transform.position + player.transform.forward * 2f + Vector3.up * 1f;
+        weaponToDrop.transform.position = dropPosition;
+        weaponToDrop.transform.rotation = Quaternion.identity;
+
+        // Disable animator
+        Animator weaponAnimator = weaponToDrop.GetComponent<Animator>();
+        if (weaponAnimator != null)
+        {
+            weaponAnimator.enabled = false;
+        }
+
+        // Enable physics
+        Rigidbody weaponRb = weaponToDrop.GetComponent<Rigidbody>();
+        if (weaponRb != null)
+        {
+            weaponRb.isKinematic = false;
+            weaponRb.useGravity = true;
+            weaponRb.drag = 0.5f;
+            weaponRb.angularDrag = 0.5f;
+
+            // Add drop force
+            Vector3 throwForce = player.transform.forward * 4f + Vector3.up * 3f;
+            weaponRb.AddForce(throwForce, ForceMode.Impulse);
+
+            // Add random rotation
+            Vector3 randomTorque = new Vector3(
+                Random.Range(-2f, 2f),
+                Random.Range(-2f, 2f),
+                Random.Range(-2f, 2f)
+            );
+            weaponRb.AddTorque(randomTorque, ForceMode.Impulse);
+        }
+
+        // Enable collider
+        Collider weaponCollider = weaponToDrop.GetComponent<Collider>();
+        if (weaponCollider != null)
+        {
+            weaponCollider.enabled = true;
+        }
+
+        Debug.Log($"Dropped weapon: {weaponToDrop.name}");
+    }
+
+    public void PickupWeapon(GameObject pickedupWeapon)
+    {
+        AddWeaponIntoActiveSlot(pickedupWeapon);
+    }
+
+    public void AddWeaponIntoActiveSlot(GameObject pickedupWeapon)
+    {
+        if (activeWeaponSlot.transform.childCount > 0)
+        {
+            Debug.Log("Active weapon slot is occupied! Drop current weapon first or switch slots.");
+            return;
+        }
+
+        Weapon weapon = pickedupWeapon.GetComponent<Weapon>();
+        if (weapon == null)
+        {
+            Debug.LogError("Picked up object doesn't have a Weapon component!");
+            return;
+        }
+
+        // Disable physics
+        Rigidbody weaponRb = pickedupWeapon.GetComponent<Rigidbody>();
+        if (weaponRb != null)
+        {
+            weaponRb.isKinematic = true;
+        }
+
+        // Parent to slot
+        pickedupWeapon.transform.SetParent(activeWeaponSlot.transform, false);
+
+        // Set data holder
+        weapon.SetGunDataHolder(gunDataHolder);
+
+        // Position weapon using spawn values
+        pickedupWeapon.transform.localPosition = weapon.spawnPosition;
+        pickedupWeapon.transform.localRotation = Quaternion.Euler(weapon.spawnRotation);
+
+        // Enable animator
+        Animator weaponAnimator = pickedupWeapon.GetComponent<Animator>();
+        if (weaponAnimator != null)
+        {
+            weaponAnimator.enabled = true;
+        }
+
+        // Initialize ammo
+        weapon.InitializeAmmo();
+
+        // Disable outline
+        Outline outline = pickedupWeapon.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = false;
+        }
+
+        Debug.Log($"Picked up {pickedupWeapon.name}");
     }
 
     // Utility methods
     public GameObject GetCurrentWeapon()
     {
-        if (currentWeaponIndex >= 0 && currentWeaponIndex < instantiatedWeapons.Count)
-            return instantiatedWeapons[currentWeaponIndex];
+        if (activeWeaponSlot != null && activeWeaponSlot.transform.childCount > 0)
+        {
+            return activeWeaponSlot.transform.GetChild(0).gameObject;
+        }
         return null;
     }
 
-    public int GetCurrentWeaponIndex() => currentWeaponIndex;
-    public int GetTotalWeaponCount() => instantiatedWeapons.Count;
+    public bool HasWeaponInActiveSlot()
+    {
+        return activeWeaponSlot != null && activeWeaponSlot.transform.childCount > 0;
+    }
+
+    public int GetActiveSlotIndex()
+    {
+        return weaponSlots.IndexOf(activeWeaponSlot);
+    }
 }
