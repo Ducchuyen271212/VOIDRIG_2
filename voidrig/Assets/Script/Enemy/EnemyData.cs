@@ -3,13 +3,14 @@ using UnityEngine;
 
 public class EnemyData : MonoBehaviour
 {
-    [Serializable]
-
     public enum healthType
     {
-        
+        health,
+        shield,
+        energyShield
     }
 
+    [Serializable]
     public class Attribute
     {
         public int health;
