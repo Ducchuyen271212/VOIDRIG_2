@@ -48,23 +48,23 @@ public class GunData : MonoBehaviour
     {
         magazineCapacity = 240,
         totalAmmo = 1200,
-        damage = 3f,
-        bulletVelocity = 180f,
+        damage = 8f,
+        bulletVelocity = 90f,
         knockBack = 2f,
-        bulletLifeTime = 2f,
-        accuracy = 0.7f,
+        bulletLifeTime = 0.25f,
+        accuracy = 0.3f,
         fireRate = 0.05f,
-        reloadTime = 1f,
+        reloadTime = 3f,
         scatter = false,
         spreadIntensity = 0.4f,
         bulletsPerBurst = 1,
         burstFireInterval = 0.05f,
-        overheatThreshold = 600f,
-        // Aiming settings - moderate zoom
+        overheatThreshold = 300f,
+        // Aiming settings
         canAim = true,
-        aimFOV = 50f, // 10 degrees zoom from 60
+        aimFOV = 45f,
         aimAccuracyMultiplier = 0.4f,
-        aimPositionOffset = new Vector3(0, -0.02f, 0.15f), // Slight forward and up
+        aimPositionOffset = new Vector3(0, -0.05f, 0.2f),
         aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Auto,
         availableModes = new ShootingMode[]
@@ -75,18 +75,18 @@ public class GunData : MonoBehaviour
     {
         magazineCapacity = 7,
         totalAmmo = 28,
-        damage = 1f,
-        bulletVelocity = 180f,
+        damage = 4f,
+        bulletVelocity = 100f,
         knockBack = 10f,
         bulletLifeTime = 0.5f,
-        accuracy = 0.3f,
-        fireRate = 0.5f,
+        accuracy = 0.4f,
+        fireRate = 0.8f,
         reloadTime = 1f,
         scatter = true,
-        spreadIntensity = 8f,
+        spreadIntensity = 3f,
         bulletsPerBurst = 40,
         burstFireInterval = 0.15f,
-        overheatThreshold = 400f,
+        overheatThreshold = 60f,
         // Aiming settings - shotguns typically don't aim down sights
         canAim = false,
         aimFOV = 60f,
@@ -100,13 +100,13 @@ public class GunData : MonoBehaviour
 
     public Attribute sniper = new Attribute
     {
-        magazineCapacity = 5,
-        totalAmmo = 20,
-        damage = 10f,
-        bulletVelocity = 540f,
+        magazineCapacity = 3,
+        totalAmmo = 30,
+        damage = 90f,
+        bulletVelocity = 400f,
         knockBack = 1f,
         bulletLifeTime = 3f,
-        accuracy = 1f,
+        accuracy = 0.8f,
         fireRate = 1f,
         reloadTime = 2f,
         scatter = false,
@@ -116,9 +116,9 @@ public class GunData : MonoBehaviour
         overheatThreshold = 10f,
         // Aiming settings - sniper scope positioning
         canAim = true,
-        aimFOV = 30f, // 30 degrees zoom from 60 - significant but not extreme
+        aimFOV = 25f,
         aimAccuracyMultiplier = 0.1f,
-        aimPositionOffset = new Vector3(0, 0.1f, 0.4f), // Bring scope to eye level
+        aimPositionOffset = new Vector3(0, -0.1f, 0.3f),
         aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Single,
         availableModes = new ShootingMode[]
@@ -127,25 +127,25 @@ public class GunData : MonoBehaviour
 
     public Attribute handGun = new Attribute
     {
-        magazineCapacity = 10,
-        totalAmmo = 40,
+        magazineCapacity = 12,
+        totalAmmo = 48,
         damage = 4f,
-        bulletVelocity = 180f,
+        bulletVelocity = 80f,
         knockBack = 4f,
-        bulletLifeTime = 2f,
-        accuracy = 0.85f,
-        fireRate = 0.1f,
-        reloadTime = 1f,
+        bulletLifeTime = 0.4f,
+        accuracy = 0.4f,
+        fireRate = 0.05f,
+        reloadTime = 0.2f,
         scatter = false,
         spreadIntensity = 0.1f,
         bulletsPerBurst = 1,
         burstFireInterval = 0.15f,
-        overheatThreshold = 100f,
+        overheatThreshold = 10f,
         // Aiming settings - handgun iron sights
         canAim = true,
-        aimFOV = 48f, // 12 degrees zoom from 60
+        aimFOV = 50f,
         aimAccuracyMultiplier = 0.5f,
-        aimPositionOffset = new Vector3(0, 0.05f, 0.35f), // Bring gun up and forward for iron sights
+        aimPositionOffset = new Vector3(0f, 0.05f, 0.1f), // Centered X to avoid parallax
         aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Single,
         availableModes = new ShootingMode[]
@@ -156,23 +156,23 @@ public class GunData : MonoBehaviour
     {
         magazineCapacity = 45,
         totalAmmo = 270,
-        damage = 5f,
-        bulletVelocity = 160f,
+        damage = 7f,
+        bulletVelocity = 120f,
         knockBack = 1f,
-        bulletLifeTime = 1.5f,
-        accuracy = 0.6f,
+        bulletLifeTime = 0.5f,
+        accuracy = 0.7f,
         fireRate = 0.07f,
         reloadTime = 1.2f,
         scatter = false,
         spreadIntensity = 0.6f,
         bulletsPerBurst = 1,
         burstFireInterval = 0.05f,
-        overheatThreshold = 600f,
+        overheatThreshold = 50f,
         // Aiming settings - SMG close quarters
         canAim = true,
-        aimFOV = 52f, // 8 degrees zoom from 60
+        aimFOV = 55f,
         aimAccuracyMultiplier = 0.7f,
-        aimPositionOffset = new Vector3(0, 0.02f, 0.2f), // Slight raise for better sight picture
+        aimPositionOffset = new Vector3(0, -0.03f, 0.15f),
         aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Auto,
         availableModes = new ShootingMode[]
@@ -184,9 +184,9 @@ public class GunData : MonoBehaviour
         magazineCapacity = 30,
         totalAmmo = 180,
         damage = 5f,
-        bulletVelocity = 220f,
+        bulletVelocity = 200f,
         knockBack = 2f,
-        bulletLifeTime = 2f,
+        bulletLifeTime = 0.3f,
         accuracy = 0.9f,
         fireRate = 0.3f,
         reloadTime = 1.5f,
@@ -194,12 +194,12 @@ public class GunData : MonoBehaviour
         spreadIntensity = 0.15f,
         bulletsPerBurst = 3,
         burstFireInterval = 0.1f,
-        overheatThreshold = 600f,
+        overheatThreshold = 60f,
         // Aiming settings - rifle with scope/sights
         canAim = true,
-        aimFOV = 40f, // 20 degrees zoom from 60
+        aimFOV = 40f,
         aimAccuracyMultiplier = 0.3f,
-        aimPositionOffset = new Vector3(0, 0.08f, 0.32f), // Bring rifle up for scope alignment
+        aimPositionOffset = new Vector3(-0.5f, 0.05f, 0.7f),
         aimRotationOffset = new Vector3(0, 0, 0),
         shootingMode = ShootingMode.Burst,
         availableModes = new ShootingMode[]

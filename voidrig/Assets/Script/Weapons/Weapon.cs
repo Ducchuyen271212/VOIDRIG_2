@@ -430,12 +430,55 @@ public class Weapon : MonoBehaviour
     // Calculate bullet direction with spread
     private Vector3 CalculateDirectionAndSpread()
     {
+        // Get camera center ray
         Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(100);
+        Vector3 targetPoint;
+
+        // Cast from camera to get target point
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            targetPoint = ray.GetPoint(100f);
+        }
+
+        // If we're close to the target, extend it to avoid weird angles
+        float distanceToTarget = Vector3.Distance(Camera.main.transform.position, targetPoint);
+        if (distanceToTarget < 5f)
+        {
+            targetPoint = ray.GetPoint(100f);
+        }
+
+        // Calculate direction from bullet spawn to target
         Vector3 direction = (targetPoint - bulletSpawn.position).normalized;
 
-        // Apply accuracy and spread
-        float accuracyMultiplier = (2f - activeGun.accuracy) * 5f;
+        // If aiming and weapon is offset, correct for parallax
+        if (AimingManager.Instance != null && AimingManager.Instance.isAiming)
+        {
+            // Project the bullet spawn position onto the camera forward plane
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraPos = Camera.main.transform.position;
+            Vector3 spawnOffset = bulletSpawn.position - cameraPos;
+
+            // Remove the forward component of the offset
+            float forwardDistance = Vector3.Dot(spawnOffset, cameraForward);
+            Vector3 lateralOffset = spawnOffset - (cameraForward * forwardDistance);
+
+            // Adjust target point by the lateral offset
+            Vector3 adjustedTarget = targetPoint + lateralOffset;
+            direction = (adjustedTarget - bulletSpawn.position).normalized;
+        }
+
+        // Apply accuracy with aiming multiplier
+        float aimingAccuracy = 1f;
+        if (AimingManager.Instance != null)
+        {
+            aimingAccuracy = AimingManager.Instance.GetAccuracyMultiplier();
+        }
+
+        float accuracyMultiplier = (2f - activeGun.accuracy) * 5f * aimingAccuracy;
         float finalSpread = spreadIntensity * accuracyMultiplier;
 
         Quaternion spreadRotation = Quaternion.Euler(
