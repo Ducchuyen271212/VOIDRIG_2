@@ -1,3 +1,4 @@
+//MouseMovement.cs
 using UnityEngine;
 
 public class MouseMovement: MonoBehaviour

@@ -11,12 +11,20 @@ public class Weapon : MonoBehaviour
     public GameObject muzzleEffect;
 
     [Header("Data")]
-    [SerializeField] private GameObject gunDataHolder; // Reference to GameObject with GunData script
+    [SerializeField] private GameObject gunDataHolder;
     [SerializeField] private SoundData soundData;
 
+    [Header("Positioning")]
+    public Vector3 spawnPosition; // Position when in player's hand
+    public Vector3 spawnRotation; // Rotation when in player's hand
+
+    [Header("State")]
+    public bool isActiveWeapon = false; // Is weapon currently active/held
+    private bool hasBeenPickedUpBefore = false; // Track first pickup for ammo
+
+    // Weapon stats
     private GunData.Attribute activeGun;
     private SoundData.WeaponSound activeSound;
-
     private int currentAmmo;
     private int magazineCapacity;
     private int totalAmmo;
@@ -28,26 +36,31 @@ public class Weapon : MonoBehaviour
     private int bulletsPerBurst;
     private float burstFireInterval;
 
+    // Shooting modes
     private GunData.ShootingMode[] availableModes;
     private int currentModeIndex;
     private GunData.ShootingMode currentShootingMode;
     private int burstBulletsLeft;
 
+    // Shooting state
     private bool isShooting = false;
     private bool readyToShoot = true;
-    private bool allowReset = true;
     private bool isReloading = false;
-
-    // Fire rate control to prevent rapid fire exploits
     private float lastShotTime = 0f;
 
+    // Input
     private PlayerInput playerInput;
     private InputAction attackAction;
     private InputAction reloadAction;
     private InputAction switchModeAction;
 
+    // Components
     private Animator animator;
     private AudioSource audioSource;
+
+    // Public accessors for other scripts
+    public int CurrentAmmo => currentAmmo;
+    public int TotalAmmo => totalAmmo;
 
     private void Awake()
     {
@@ -58,127 +71,149 @@ public class Weapon : MonoBehaviour
 
     private void Start()
     {
-        // Initialize weapon data if gunDataHolder is already set
+        // Initialize weapon data if already set
         if (gunDataHolder != null)
         {
             InitializeWeaponData();
-        }
-        else
-        {
-            Debug.LogWarning($"GunDataHolder not set for weapon: {gameObject.name}. Will be set by WeaponManager.");
         }
     }
 
     private void OnEnable()
     {
-        playerInput = GetComponentInParent<PlayerInput>();
-        if (playerInput == null || playerInput.actions == null)
+        // Setup input when weapon is enabled and in a slot
+        if (transform.parent != null)
         {
-            Debug.LogError("PlayerInput or its actions are not initialized!");
-            return;
+            SetupInputActions();
         }
-
-        attackAction = playerInput.actions["Attack"];
-        reloadAction = playerInput.actions["Reload"];
-        switchModeAction = playerInput.actions["SwitchMode"];
-
-        attackAction.Enable();
-        reloadAction.Enable();
-        switchModeAction.Enable();
-
-        // Reset weapon state when weapon becomes active
-        ResetWeaponState();
+        else
+        {
+            isActiveWeapon = false;
+        }
     }
 
     private void OnDisable()
     {
-        // Don't disable actions as they're shared between weapons
+        isActiveWeapon = false;
     }
 
-    // Method to set gun data holder from WeaponManager
+    // Setup input actions
+    private void SetupInputActions()
+    {
+        playerInput = GetComponentInParent<PlayerInput>();
+        if (playerInput?.actions != null)
+        {
+            attackAction = playerInput.actions["Attack"];
+            reloadAction = playerInput.actions["Reload"];
+            switchModeAction = playerInput.actions["SwitchMode"];
+
+            attackAction?.Enable();
+            reloadAction?.Enable();
+            switchModeAction?.Enable();
+
+            ResetWeaponState();
+            isActiveWeapon = true;
+        }
+    }
+
+    // Public method to manually setup input when weapon is picked up
+    public void SetupInput()
+    {
+        SetupInputActions();
+    }
+
+    // Set gun data holder from WeaponManager
     public void SetGunDataHolder(GameObject holder)
     {
         gunDataHolder = holder;
-
-        // Re-initialize the weapon with the new data
         if (gunDataHolder != null)
         {
             InitializeWeaponData();
         }
     }
 
-    // Separate method to initialize weapon data
+    // Initialize ammo when weapon is picked up
+    public void InitializeAmmo()
+    {
+        if (activeGun != null)
+        {
+            // Only give full ammo on first pickup
+            if (!hasBeenPickedUpBefore)
+            {
+                currentAmmo = magazineCapacity;
+                totalAmmo = activeGun.totalAmmo;
+                hasBeenPickedUpBefore = true;
+            }
+            isReloading = false;
+        }
+    }
+
+    // Initialize weapon data based on tag
     private void InitializeWeaponData()
     {
-        if (gunDataHolder == null)
-        {
-            Debug.LogError($"GunDataHolder not set for weapon: {gameObject.name}");
-            return;
-        }
+        if (gunDataHolder == null) return;
 
         GunData gunData = gunDataHolder.GetComponent<GunData>();
-        if (gunData == null)
-        {
-            Debug.LogError($"GunData component not found on GunDataHolder for weapon: {gameObject.name}");
-            return;
-        }
+        if (gunData == null) return;
 
+        // Set weapon data based on tag
         switch (gameObject.tag)
         {
-            case "MachineGun": SetActiveGun(gunData.machineGun, soundData.machineGun); break;
-            case "ShotGun": SetActiveGun(gunData.shotGun, soundData.shotGun); break;
-            case "Sniper": SetActiveGun(gunData.sniper, soundData.sniper); break;
-            case "HandGun": SetActiveGun(gunData.handGun, soundData.handGun); break;
-            case "SMG": SetActiveGun(gunData.smg, soundData.smg); break;
-            case "BurstRifle": SetActiveGun(gunData.burstRifle, soundData.burstRifle); break;
+            case "MachineGun": SetActiveGun(gunData.machineGun, soundData?.machineGun); break;
+            case "ShotGun": SetActiveGun(gunData.shotGun, soundData?.shotGun); break;
+            case "Sniper": SetActiveGun(gunData.sniper, soundData?.sniper); break;
+            case "HandGun": SetActiveGun(gunData.handGun, soundData?.handGun); break;
+            case "SMG": SetActiveGun(gunData.smg, soundData?.smg); break;
+            case "BurstRifle": SetActiveGun(gunData.burstRifle, soundData?.burstRifle); break;
             default:
-                Debug.LogWarning("Unknown weapon tag: " + gameObject.tag + ". Defaulting to MachineGun.");
-                SetActiveGun(gunData.machineGun, soundData.machineGun);
+                SetActiveGun(gunData.machineGun, soundData?.machineGun);
                 break;
         }
     }
 
-    // Reset state when weapon becomes active to fix switching issues
+    // Reset weapon state when becoming active
     private void ResetWeaponState()
     {
         readyToShoot = true;
         isShooting = false;
         isReloading = false;
-        allowReset = true;
         lastShotTime = 0f;
 
-        // Force animator back to idle when weapon becomes active
         if (animator != null)
         {
             animator.Play("Idle", 0, 0f);
         }
-
-        Debug.Log($"Reset weapon state for: {gameObject.name}");
     }
 
     private void Update()
     {
-        // Fire rate control - prevent shooting faster than fireRate allows
+        // Only process input if weapon is active and all required components exist
+        if (!isActiveWeapon || attackAction == null || reloadAction == null || switchModeAction == null || activeGun == null)
+            return;
+
+        // Fire rate control
         bool canShootByFireRate = Time.time >= lastShotTime + fireRate;
 
+        // Check for shooting input
         isShooting = currentShootingMode == GunData.ShootingMode.Auto
             ? attackAction.IsPressed()
             : attackAction.WasPressedThisFrame();
 
+        // Handle shooting
         if (readyToShoot && isShooting && canShootByFireRate && !isReloading)
         {
             if (currentAmmo > 0)
             {
-                lastShotTime = Time.time; // Track when we last shot
+                lastShotTime = Time.time;
 
-                // Don't play sound here for burst weapons - let each bullet play its own sound
+                // Play sound for single shots and shotguns
                 if (activeGun.scatter || currentShootingMode == GunData.ShootingMode.Single)
                 {
-                    // Play sound once for shotgun or single shots
-                    PlaySound(soundData.GetShootClip(activeSound));
+                    PlaySound(soundData?.GetShootClip(activeSound));
                 }
 
-                if (animator.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Recoil")
+                // Play recoil animation
+                if (animator?.GetCurrentAnimatorClipInfo(0)?.Length > 0 &&
+                    animator.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Recoil")
                 {
                     SetAnimTrigger("Recoil");
                 }
@@ -188,31 +223,34 @@ public class Weapon : MonoBehaviour
             }
             else
             {
+                // Out of ammo
                 SetAnimTrigger("RecoilRecover");
-                PlaySound(soundData.GetEmptyClip(activeSound));
+                PlaySound(soundData?.GetEmptyClip(activeSound));
             }
         }
 
+        // Handle reload input
         if (reloadAction.WasPressedThisFrame())
         {
             TryReload();
         }
 
-        // Mode switching input handling
+        // Handle mode switching
         if (switchModeAction.WasPressedThisFrame())
         {
             SwitchMode();
         }
 
-        if (AmmoManager.Instance?.ammoDisplay != null)
+        // Update ammo display only if this weapon is active
+        if (AmmoManager.Instance?.ammoDisplay != null && isActiveWeapon)
         {
             AmmoManager.Instance.ammoDisplay.text = $"{currentAmmo} / {totalAmmo}";
         }
     }
 
+    // Handle repeated shooting for burst/auto
     private IEnumerator ShootRepeatedly()
     {
-        // Only disable readyToShoot for non-auto weapons
         if (currentShootingMode != GunData.ShootingMode.Auto)
         {
             readyToShoot = false;
@@ -220,103 +258,97 @@ public class Weapon : MonoBehaviour
 
         if (activeGun.scatter)
         {
+            // Shotgun - fire multiple pellets at once
             if (currentAmmo > 0 && !isReloading)
             {
                 for (int i = 0; i < bulletsPerBurst; i++)
                 {
-                    FireBullet(ignoreAmmo: true); // fire 40 pellets
+                    FireBullet(ignoreAmmo: true);
                 }
-                currentAmmo--; // use 1 shell
+                currentAmmo--;
             }
         }
         else
         {
-            // Normal guns
+            // Normal guns - fire bullets in sequence
             while (burstBulletsLeft > 0 && currentAmmo > 0 && !isReloading)
             {
                 FireBullet();
 
-                // Play sound for each bullet in burst/auto mode
+                // Play sound for each bullet in burst/auto
                 if (currentShootingMode == GunData.ShootingMode.Burst || currentShootingMode == GunData.ShootingMode.Auto)
                 {
-                    PlaySound(soundData.GetShootClip(activeSound));
+                    PlaySound(soundData?.GetShootClip(activeSound));
                 }
 
                 burstBulletsLeft--;
 
-                if (currentShootingMode == GunData.ShootingMode.Single)
-                    break;
+                if (currentShootingMode == GunData.ShootingMode.Single) break;
 
                 yield return new WaitForSeconds(burstFireInterval);
             }
         }
 
-        // Handle different weapon types differently
+        // Handle different weapon reset logic
         if (currentShootingMode == GunData.ShootingMode.Auto)
         {
-            // For auto weapons, only reset when stopping
-            if (attackAction.WasReleasedThisFrame() || currentAmmo <= 0)
+            if (attackAction?.WasReleasedThisFrame() == true || currentAmmo <= 0)
             {
                 ResetShot();
             }
             else
             {
-                // Just reset animation to idle without triggering RecoilRecover
-                if (animator != null)
-                {
-                    animator.Play("Idle", 0, 0f);
-                }
+                if (animator != null) animator.Play("Idle", 0, 0f);
             }
         }
         else
         {
-            // For single/burst, always reset after shooting
             ResetShot();
         }
     }
 
+    // Fire a single bullet
     private void FireBullet(bool ignoreAmmo = false)
     {
-        if (!ignoreAmmo && currentAmmo <= 0)
-        {
-            Debug.Log(totalAmmo <= 0 ? "Completely out of ammo!" : "Magazine empty! Press reload.");
-            return;
-        }
+        if (!ignoreAmmo && currentAmmo <= 0) return;
 
+        // Play effects
         SetAnimTrigger("RecoilHigh");
         muzzleEffect?.GetComponent<ParticleSystem>()?.Play();
 
+        // Create and fire bullet
         Vector3 shootingDirection = CalculateDirectionAndSpread().normalized;
         GameObject bullet = Instantiate(bulletPrefab, bulletSpawn.position, Quaternion.identity);
 
+        // Set bullet damage
         if (bullet.TryGetComponent(out Bullet bulletScript))
         {
             bulletScript.damage = activeGun.damage;
         }
 
+        // Apply physics
         bullet.transform.forward = shootingDirection;
         Rigidbody rb = bullet.GetComponent<Rigidbody>();
         rb.AddForce(shootingDirection * bulletVelocity, ForceMode.Impulse);
         Destroy(bullet, bulletLifeTime);
 
-        if (!ignoreAmmo)
-            currentAmmo--;
-
-        Debug.Log("Bullet fired! Remaining ammo: " + currentAmmo + "/" + totalAmmo);
+        // Consume ammo
+        if (!ignoreAmmo) currentAmmo--;
     }
 
+    // Try to reload weapon
     private void TryReload()
     {
         if (!isReloading)
         {
             isReloading = true;
-            Debug.Log("Reloading...");
             SetAnimTrigger("Reload");
-            PlaySound(soundData.GetReloadClip(activeSound));
+            PlaySound(soundData?.GetReloadClip(activeSound));
             StartCoroutine(ReloadWeapon(reloadTime));
         }
     }
 
+    // Reload weapon over time
     private IEnumerator ReloadWeapon(float reloadTime)
     {
         yield return new WaitForSeconds(reloadTime);
@@ -325,7 +357,7 @@ public class Weapon : MonoBehaviour
 
         if (totalAmmo <= 0)
         {
-            Debug.Log("No ammo in reserve to reload!");
+            // No ammo to reload
         }
         else if (totalAmmo < missingAmmo)
         {
@@ -338,32 +370,36 @@ public class Weapon : MonoBehaviour
             totalAmmo -= missingAmmo;
         }
 
-        Debug.Log("Reloaded. Ammo: " + currentAmmo + "/" + totalAmmo);
         SetAnimTrigger("ReloadRecover");
         isReloading = false;
     }
 
+    // Reset shooting state
     private void ResetShot()
     {
         readyToShoot = true;
-        allowReset = true;
         SetAnimTrigger("RecoilRecover");
 
-        // Force immediate transition to Idle
         if (animator != null)
         {
             animator.Play("Idle", 0, 0f);
         }
     }
 
+    // Set weapon stats from gun data
     private void SetActiveGun(GunData.Attribute gun, SoundData.WeaponSound sound)
     {
         activeGun = gun;
         activeSound = sound;
 
         magazineCapacity = gun.magazineCapacity;
-        currentAmmo = magazineCapacity;
-        totalAmmo = gun.totalAmmo;
+        // Only set starting ammo on first pickup
+        if (!hasBeenPickedUpBefore)
+        {
+            currentAmmo = magazineCapacity;
+            totalAmmo = gun.totalAmmo;
+        }
+
         reloadTime = gun.reloadTime;
         fireRate = gun.fireRate;
         bulletVelocity = gun.bulletVelocity;
@@ -372,41 +408,77 @@ public class Weapon : MonoBehaviour
         bulletsPerBurst = Mathf.Max(1, gun.bulletsPerBurst);
         burstFireInterval = gun.burstFireInterval;
 
-        availableModes = gun.availableModes != null && gun.availableModes.Length > 0
+        availableModes = gun.availableModes?.Length > 0
             ? gun.availableModes
             : new GunData.ShootingMode[] { gun.shootingMode };
 
         currentModeIndex = 0;
         currentShootingMode = availableModes[currentModeIndex];
         burstBulletsLeft = bulletsPerBurst;
-
-        Debug.Log($"Equipped weapon: {gun} | Mode: {currentShootingMode} | Ammo: {currentAmmo}/{totalAmmo}");
     }
 
+    // Switch between available firing modes
     public void SwitchMode()
     {
-        if (availableModes.Length > 1)
+        if (availableModes?.Length > 1)
         {
             currentModeIndex = (currentModeIndex + 1) % availableModes.Length;
             currentShootingMode = availableModes[currentModeIndex];
-            Debug.Log("Switched shooting mode to: " + currentShootingMode);
-        }
-        else
-        {
-            Debug.Log($"Only one firing mode available for {gameObject.name}");
         }
     }
 
+    // Calculate bullet direction with spread
     private Vector3 CalculateDirectionAndSpread()
     {
+        // Get camera center ray
         Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(100);
+        Vector3 targetPoint;
+
+        // Cast from camera to get target point
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            targetPoint = ray.GetPoint(100f);
+        }
+
+        // If we're close to the target, extend it to avoid weird angles
+        float distanceToTarget = Vector3.Distance(Camera.main.transform.position, targetPoint);
+        if (distanceToTarget < 5f)
+        {
+            targetPoint = ray.GetPoint(100f);
+        }
+
+        // Calculate direction from bullet spawn to target
         Vector3 direction = (targetPoint - bulletSpawn.position).normalized;
 
-        // Calculate final spread: base spread modified by accuracy
-        // Lower accuracy = more spread, Higher accuracy = less spread
-        // Multiply by (2 - accuracy) so low accuracy makes spread worse
-        float accuracyMultiplier = (2f - activeGun.accuracy) * 5f; // Multiply by 5 to make accuracy effect strong
+        // If aiming and weapon is offset, correct for parallax
+        if (AimingManager.Instance != null && AimingManager.Instance.isAiming)
+        {
+            // Project the bullet spawn position onto the camera forward plane
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraPos = Camera.main.transform.position;
+            Vector3 spawnOffset = bulletSpawn.position - cameraPos;
+
+            // Remove the forward component of the offset
+            float forwardDistance = Vector3.Dot(spawnOffset, cameraForward);
+            Vector3 lateralOffset = spawnOffset - (cameraForward * forwardDistance);
+
+            // Adjust target point by the lateral offset
+            Vector3 adjustedTarget = targetPoint + lateralOffset;
+            direction = (adjustedTarget - bulletSpawn.position).normalized;
+        }
+
+        // Apply accuracy with aiming multiplier
+        float aimingAccuracy = 1f;
+        if (AimingManager.Instance != null)
+        {
+            aimingAccuracy = AimingManager.Instance.GetAccuracyMultiplier();
+        }
+
+        float accuracyMultiplier = (2f - activeGun.accuracy) * 5f * aimingAccuracy;
         float finalSpread = spreadIntensity * accuracyMultiplier;
 
         Quaternion spreadRotation = Quaternion.Euler(
@@ -418,30 +490,26 @@ public class Weapon : MonoBehaviour
         return spreadRotation * direction;
     }
 
+    // Trigger animation safely
     private void SetAnimTrigger(string triggerName)
     {
-        if (animator == null)
+        if (animator?.HasParameterOfType(triggerName, AnimatorControllerParameterType.Trigger) == true)
         {
-            Debug.LogError("Animator not assigned.");
-            return;
+            animator.SetTrigger(triggerName);
         }
-
-        if (!animator.HasParameterOfType(triggerName, AnimatorControllerParameterType.Trigger))
-        {
-            Debug.LogWarning($"Missing trigger in Animator: {triggerName}");
-            return;
-        }
-
-        Debug.Log($"Setting animation trigger: {triggerName}");
-        animator.SetTrigger(triggerName);
     }
 
+    // Play sound safely
     private void PlaySound(AudioClip clip)
     {
-        if (clip != null) audioSource.PlayOneShot(clip);
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 }
 
+// Extension for animator parameter checking
 public static class AnimatorExtensions
 {
     public static bool HasParameterOfType(this Animator animator, string name, AnimatorControllerParameterType type)
