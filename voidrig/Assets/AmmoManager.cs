@@ -1,12 +1,12 @@
-//AmmoManager.cs
-using TMPro;
+// AmmoManager.cs
 using UnityEngine;
+using TMPro;
 
 public class AmmoManager : MonoBehaviour
 {
     public static AmmoManager Instance { get; private set; }
 
-    // UI
+    [Header("UI References")]
     public TextMeshProUGUI ammoDisplay;
 
     private void Awake()
@@ -14,10 +14,19 @@ public class AmmoManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-        else if (Instance != this)
+        else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 }

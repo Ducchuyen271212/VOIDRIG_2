@@ -1,4 +1,4 @@
-//AimingManager.cs - Clean Version Without Debug
+//AimingManager.cs - Updated for ModularWeapon
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,7 +21,7 @@ public class AimingManager : MonoBehaviour
     private Camera playerCamera;
     private PlayerInput playerInput;
     private InputAction aimAction;
-    private Weapon currentWeapon;
+    private ModularWeapon currentWeapon;  // Changed from Weapon to ModularWeapon
     private MouseMovement mouseMovement;
 
     // Current weapon aiming settings
@@ -58,13 +58,13 @@ public class AimingManager : MonoBehaviour
         }
         if (playerInput == null)
         {
-            playerInput = FindObjectOfType<PlayerInput>();
+            playerInput = FindFirstObjectByType<PlayerInput>();
         }
 
         if (playerInput == null) return;
 
         // Get mouse movement
-        mouseMovement = FindObjectOfType<MouseMovement>();
+        mouseMovement = FindFirstObjectByType<MouseMovement>();
         if (mouseMovement != null)
         {
             originalMouseSensitivity = mouseMovement.mouseSensitivity;
@@ -90,17 +90,17 @@ public class AimingManager : MonoBehaviour
 
     private void UpdateCurrentWeapon()
     {
-        Weapon previousWeapon = currentWeapon;
+        ModularWeapon previousWeapon = currentWeapon;
         currentWeapon = null;
         currentWeaponData = null;
 
         if (WeaponManager.Instance?.GetCurrentWeapon() != null)
         {
-            currentWeapon = WeaponManager.Instance.GetCurrentWeapon().GetComponent<Weapon>();
+            currentWeapon = WeaponManager.Instance.GetCurrentWeapon().GetComponent<ModularWeapon>();
 
-            if (currentWeapon != null)
+            if (currentWeapon != null && currentWeapon.isActiveWeapon)
             {
-                currentWeaponData = GetWeaponAimingData(currentWeapon);
+                currentWeaponData = currentWeapon.WeaponData;
             }
         }
 
@@ -110,25 +110,6 @@ public class AimingManager : MonoBehaviour
             ForceStopAiming();
             ResetCameraFOV();
         }
-    }
-
-    private GunData.Attribute GetWeaponAimingData(Weapon weapon)
-    {
-        if (WeaponManager.Instance?.gunDataHolder == null) return null;
-
-        GunData gunData = WeaponManager.Instance.gunDataHolder.GetComponent<GunData>();
-        if (gunData == null) return null;
-
-        return weapon.gameObject.tag switch
-        {
-            "MachineGun" => gunData.machineGun,
-            "ShotGun" => gunData.shotGun,
-            "Sniper" => gunData.sniper,
-            "HandGun" => gunData.handGun,
-            "SMG" => gunData.smg,
-            "BurstRifle" => gunData.burstRifle,
-            _ => null
-        };
     }
 
     private void HandleAimInput()
