@@ -18,17 +18,17 @@ public class ScatterFireModule : MonoBehaviour, IFireModule
         this.weapon = weapon;
     }
 
-    public void OnWeaponActivated()
-    {
+    public void OnWeaponActivated() 
+    { 
         readyToShoot = true;
         isFiring = false;
     }
-
-    public void OnWeaponDeactivated()
+    
+    public void OnWeaponDeactivated() 
     {
         isFiring = false;
     }
-
+    
     public void OnUpdate() { }
 
     public void OnFireInput(bool isPressed, bool wasPressed)
@@ -41,30 +41,30 @@ public class ScatterFireModule : MonoBehaviour, IFireModule
 
     public bool CanFire()
     {
-        if (weapon?.WeaponData == null)
+        if (weapon?.WeaponData == null) 
         {
             Debug.Log("Cannot fire - no weapon data");
             return false;
         }
-
+        
         var projectileModule = weapon.GetProjectileModule();
         if (projectileModule == null)
         {
             Debug.LogError("Cannot fire - no projectile module found!");
             return false;
         }
-
+        
         float fireCooldown = weapon.WeaponData.fireRate;
         bool canFireByRate = Time.time - lastShotTime >= fireCooldown;
-
+        
         var ammoModule = weapon.GetAmmoModule();
         bool hasAmmo = ammoModule == null || ammoModule.GetCurrentAmmo() > 0;
-
+        
         if (!canFireByRate) Debug.Log("Cannot fire - fire rate cooldown");
         if (!hasAmmo) Debug.Log($"Cannot fire - no ammo (current: {ammoModule?.GetCurrentAmmo()})");
         if (isFiring) Debug.Log("Cannot fire - already firing");
         if (!readyToShoot) Debug.Log("Cannot fire - not ready to shoot");
-
+        
         return readyToShoot && canFireByRate && hasAmmo && !isFiring;
     }
 
@@ -101,28 +101,6 @@ public class ScatterFireModule : MonoBehaviour, IFireModule
 
             Debug.Log($"Firing {actualPellets} pellets, projectile module: {projectileModule.GetType().Name}");
 
-            // Check if projectile module can create projectiles
-            var physicalProjectile = projectileModule as PhysicalProjectileModule;
-            if (physicalProjectile != null && physicalProjectile.projectilePrefab == null)
-            {
-                Debug.LogError("PhysicalProjectileModule has no projectile prefab assigned! Trying to find bullet prefab...");
-
-                // Try to find a bullet prefab in the weapon
-                var bulletPrefab = weapon.GetComponent<Weapon>()?.bulletPrefab;
-                if (bulletPrefab != null)
-                {
-                    physicalProjectile.projectilePrefab = bulletPrefab;
-                    Debug.Log($"Found bullet prefab: {bulletPrefab.name}");
-                }
-                else
-                {
-                    Debug.LogError("No bullet prefab found! Cannot fire.");
-                    isFiring = false;
-                    readyToShoot = true;
-                    yield break; // Use yield break instead of return in coroutine
-                }
-            }
-
             // Fire all pellets
             for (int i = 0; i < actualPellets; i++)
             {
@@ -134,7 +112,7 @@ public class ScatterFireModule : MonoBehaviour, IFireModule
                     finalDirection,
                     weapon.WeaponData.bulletVelocity
                 );
-
+                
                 if (projectile == null)
                 {
                     Debug.LogError($"Failed to create projectile {i}!");
@@ -173,7 +151,7 @@ public class ScatterFireModule : MonoBehaviour, IFireModule
         // Wait for fire cooldown
         float cooldown = weapon.WeaponData?.fireRate ?? 0.5f;
         yield return new WaitForSeconds(cooldown);
-
+        
         // Recovery
         weapon.SetAnimationTrigger("RecoilRecover");
         readyToShoot = true;

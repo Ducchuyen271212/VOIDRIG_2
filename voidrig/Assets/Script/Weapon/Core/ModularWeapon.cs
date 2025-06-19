@@ -154,11 +154,14 @@ public class ModularWeapon : MonoBehaviour
         {
             try
             {
-                action?.Invoke(module);
+                if (module != null)
+                {
+                    action?.Invoke(module);
+                }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error in module {module.GetType().Name}: {e.Message}");
+                Debug.LogError($"Error in module {module?.GetType().Name}: {e.Message}");
             }
         }
     }
@@ -534,9 +537,21 @@ public class ModularWeapon : MonoBehaviour
 
     private void UpdateUI()
     {
-        if (AmmoManager.Instance?.ammoDisplay != null && isActiveWeapon && ammoModule != null)
+        try
         {
-            AmmoManager.Instance.ammoDisplay.text = $"{ammoModule.GetCurrentAmmo()} / {ammoModule.GetTotalAmmo()}";
+            if (AmmoManager.Instance?.ammoDisplay != null && isActiveWeapon && ammoModule != null)
+            {
+                AmmoManager.Instance.ammoDisplay.text = $"{ammoModule.GetCurrentAmmo()} / {ammoModule.GetTotalAmmo()}";
+            }
+            else if (AmmoManager.Instance?.ammoDisplay != null && isActiveWeapon)
+            {
+                // No ammo module - show infinite ammo
+                AmmoManager.Instance.ammoDisplay.text = "∞ / ∞";
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"Error updating UI: {e.Message}");
         }
     }
 
