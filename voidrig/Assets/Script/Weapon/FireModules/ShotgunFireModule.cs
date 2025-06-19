@@ -1,24 +1,17 @@
-﻿// ShotgunFireModule.cs - 0–3 high, consistent ray direction
+﻿// ShotgunFireModule.cs — true horizontal spread + proper tilt
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ShotgunFireModule : MonoBehaviour, IFireModule
 {
     [Header("Shotgun Settings")]
     public int pelletCount = 8;
-    public float spreadIntensity = 1f; // 0 = no spread, 3 = very high spread
-    public SpreadPattern spreadPattern = SpreadPattern.Horizontal;
-    public float bulletLifetimeOverride = -1f; // -1 = use weapon data
-
-    public enum SpreadPattern
-    {
-        Horizontal,  // evenly across X
-        Circular,    // evenly around circle radius = spreadIntensity
-        Vertical,    // evenly across Y
-        Random,      // random within circle radius = spreadIntensity
-        XShape       // full “X” diagonal
-    }
+    [Tooltip("Half-angle of horizontal spread in degrees (e.g. 10 → –10° to +10°)")]
+    public float spreadIntensity = 10f;
+    [Tooltip("Rotate the entire spread fan around the barrel axis (0 = true horizontal, 90 = vertical)")]
+    public float tiltAngle = 0f;
+    [Tooltip(">0 overrides bullet lifetime")]
+    public float bulletLifetimeOverride = -1f;
 
     private ModularWeapon weapon;
     private bool readyToShoot = true;
@@ -39,25 +32,15 @@ public class ShotgunFireModule : MonoBehaviour, IFireModule
     public bool CanFire()
     {
         if (!weapon.isActiveWeapon || weapon.WeaponData == null) return false;
-        if (weapon.GetProjectileModule() == null) return false;
-
+        if (Time.time < lastShotTime + weapon.WeaponData.fireRate) return false;
         var ammo = weapon.GetAmmoModule();
-        if (ammo != null)
-        {
-            var std = ammo as StandardAmmoModule;
-            if (std != null && std.IsReloading()) return false;
-            if (ammo.GetCurrentAmmo() <= 0) return false;
-        }
-
-        return readyToShoot
-            && Time.time - lastShotTime >= weapon.WeaponData.fireRate
-            && !isFiring;
+        if (ammo != null && ammo.GetCurrentAmmo() <= 0) return false;
+        return readyToShoot && !isFiring;
     }
 
     public IEnumerator Fire()
     {
         if (!CanFire()) yield break;
-
         isFiring = true;
         readyToShoot = false;
         lastShotTime = Time.time;
@@ -65,6 +48,7 @@ public class ShotgunFireModule : MonoBehaviour, IFireModule
         var proj = weapon.GetProjectileModule();
         var ammo = weapon.GetAmmoModule();
 
+        // out-of-ammo check
         if (ammo != null && ammo.GetCurrentAmmo() <= 0)
         {
             if (weapon.WeaponSound?.emptyClip != null)
@@ -77,163 +61,58 @@ public class ShotgunFireModule : MonoBehaviour, IFireModule
 
         if (proj != null)
         {
-            SetupBulletPrefab(proj);
+            // compute a fixed “baseDir” so tilt always behaves consistently
+            Ray aimRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            Vector3 farTarget = aimRay.GetPoint(100f);
+            Vector3 baseDir = (farTarget - weapon.FirePoint.position).normalized;
 
-            // Use viewport ray direction for consistency
-            var ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            Vector3 baseDir = ray.direction.normalized;
-
-            // Generate offsets once
-            List<Vector2> offsets = GenerateOffsets(pelletCount, spreadPattern, spreadIntensity);
-
+            // fire each pellet in turn
             for (int i = 0; i < pelletCount; i++)
             {
-                var o = offsets[i];
-                Vector3 dir = Quaternion.Euler(o.y, o.x, 0f) * baseDir;
+                // angle from –spreadIntensity to +spreadIntensity
+                float t = pelletCount > 1 ? (float)i / (pelletCount - 1) : 0.5f;
+                float yawOffset = Mathf.Lerp(-spreadIntensity, spreadIntensity, t);
 
-                var bullet = proj.CreateProjectile(
+                // first yaw around camera up → fan
+                Quaternion yaw = Quaternion.AngleAxis(yawOffset, Camera.main.transform.up);
+                Vector3 dir = yaw * baseDir;
+
+                // then tilt that entire fan around the barrel axis
+                dir = Quaternion.AngleAxis(tiltAngle, baseDir) * dir;
+
+                // create projectile
+                GameObject b = proj.CreateProjectile(
                     weapon.FirePoint.position,
                     dir,
                     weapon.WeaponData.bulletVelocity
                 );
 
-                if (bullet != null && bulletLifetimeOverride > 0)
+                // override lifetime if needed
+                if (b != null && bulletLifetimeOverride > 0f)
                 {
-                    var d = bullet.GetComponent<DestroyAfterTime>();
-                    if (d != null) Destroy(d);
-                    Destroy(bullet, bulletLifetimeOverride);
+                    var old = b.GetComponent<DestroyAfterTime>();
+                    if (old != null) Destroy(old);
+                    Destroy(b, bulletLifetimeOverride);
                 }
             }
 
-            if (ammo != null)
-            {
-                ammo.ConsumeAmmo(1);
-                Debug.Log($"Shotgun fired! Remaining ammo: {ammo.GetCurrentAmmo()}");
-            }
+            // consume one shell
+            if (ammo != null) ammo.ConsumeAmmo(1);
 
+            // recoil & sound
             weapon.SetAnimationTrigger("Recoil");
             if (weapon.WeaponSound?.shootClip != null)
                 weapon.PlaySound(weapon.WeaponSound.shootClip);
         }
-        else
-        {
-            Debug.LogError("Cannot fire – no projectile module found!");
-        }
 
-        yield return new WaitForSeconds(weapon.WeaponData?.fireRate ?? 0.8f);
+        // cooldown + recover
+        yield return new WaitForSeconds(weapon.WeaponData.fireRate);
         weapon.SetAnimationTrigger("RecoilRecover");
         readyToShoot = true;
         isFiring = false;
     }
 
-    // Precompute evenly spaced or random offsets
-    private List<Vector2> GenerateOffsets(int count, SpreadPattern pattern, float intensity)
-    {
-        var list = new List<Vector2>(count);
-        float spread = Mathf.Clamp(intensity, 0f, 3f);
-        bool isAim = AimingManager.Instance != null && AimingManager.Instance.isAiming;
-        float mul = isAim ? AimingManager.Instance.GetAccuracyMultiplier() : 1f;
-        spread *= mul;
-
-        switch (pattern)
-        {
-            case SpreadPattern.Horizontal:
-                for (int i = 0; i < count; i++)
-                {
-                    float x = count > 1
-                        ? Mathf.Lerp(-spread, spread, (float)i / (count - 1))
-                        : 0f;
-                    list.Add(new Vector2(x, 0f));
-                }
-                break;
-
-            case SpreadPattern.Vertical:
-                for (int i = 0; i < count; i++)
-                {
-                    float y = count > 1
-                        ? Mathf.Lerp(-spread, spread, (float)i / (count - 1))
-                        : 0f;
-                    list.Add(new Vector2(0f, y));
-                }
-                break;
-
-            case SpreadPattern.Circular:
-                for (int i = 0; i < count; i++)
-                {
-                    float ang = (2 * Mathf.PI * i) / count;
-                    list.Add(new Vector2(Mathf.Cos(ang) * spread, Mathf.Sin(ang) * spread));
-                }
-                break;
-
-            case SpreadPattern.XShape:
-                int half = (count + 1) / 2;
-                bool odd = (count % 2) == 1;
-                for (int i = 0; i < half; i++)
-                {
-                    float t = half > 1 ? (float)i / (half - 1) : 0f;
-                    float d = Mathf.Lerp(-spread, spread, t);
-                    list.Add(new Vector2(d, d));
-                }
-                for (int i = 0; i < half; i++)
-                {
-                    if (odd && i == 0) continue;
-                    float t = half > 1 ? (float)i / (half - 1) : 0f;
-                    float d = Mathf.Lerp(-spread, spread, t);
-                    list.Add(new Vector2(d, -d));
-                }
-                break;
-
-            case SpreadPattern.Random:
-                for (int i = 0; i < count; i++)
-                    list.Add(UnityEngine.Random.insideUnitCircle * spread);
-                break;
-        }
-
-        return list;
-    }
-
-    private void SetupBulletPrefab(IProjectileModule proj)
-    {
-        var t = proj.GetType();
-        var f = t.GetField("bulletPrefab") ?? t.GetField("projectilePrefab");
-        if (f != null && f.GetValue(proj) == null)
-        {
-            var legacy = weapon.GetComponent<Weapon>();
-            if (legacy?.bulletPrefab != null)
-                f.SetValue(proj, legacy.bulletPrefab);
-        }
-    }
-
-    public void SetBulletLifetime(float lt) => bulletLifetimeOverride = lt;
-
-    [ContextMenu("Preset: Realistic Shotgun")]
-    public void PresetRealisticShotgun()
-    {
-        pelletCount = 8;
-        spreadIntensity = 1f;
-        spreadPattern = SpreadPattern.Horizontal;
-        bulletLifetimeOverride = 1f;
-    }
-
-    [ContextMenu("Preset: Wide Spread")]
-    public void PresetWideSpread()
-    {
-        pelletCount = 12;
-        spreadIntensity = 3f;
-        spreadPattern = SpreadPattern.Circular;
-        bulletLifetimeOverride = 0.8f;
-    }
-
-    [ContextMenu("Preset: Tight Choke")]
-    public void PresetTightChoke()
-    {
-        pelletCount = 6;
-        spreadIntensity = 0.5f;
-        spreadPattern = SpreadPattern.Horizontal;
-        bulletLifetimeOverride = 1.5f;
-    }
-
-    // Keep DestroyAfterTime here
+    // helper class as before
     public class DestroyAfterTime : MonoBehaviour
     {
         public float lifetime = 5f;

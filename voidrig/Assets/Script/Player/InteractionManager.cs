@@ -1,4 +1,4 @@
-//InteractionManager.cs
+//InteractionManager.cs - Updated for ModularWeapons
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +9,7 @@ public class InteractionManager : MonoBehaviour
     [Header("Interaction Settings")]
     public float maxInteractionDistance = 5f; // Max distance to highlight weapons
 
-    public Weapon hoveredWeapon = null; // Currently highlighted weapon
+    public GameObject hoveredWeapon = null; // Currently highlighted weapon (could be old or new)
     private PlayerInput playerInput;
     private InputAction interactAction;
 
@@ -44,18 +44,34 @@ public class InteractionManager : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxInteractionDistance))
         {
-            // Check if hit object is a weapon
-            Weapon weaponComponent = hit.transform.GetComponent<Weapon>();
+            // Check if hit object is a weapon (old or new system)
+            GameObject weaponObject = null;
 
-            if (weaponComponent != null && IsWeaponOnGround(weaponComponent))
+            // Try ModularWeapon first
+            ModularWeapon modularWeapon = hit.transform.GetComponent<ModularWeapon>();
+            if (modularWeapon != null && IsWeaponOnGround(hit.transform.gameObject))
+            {
+                weaponObject = hit.transform.gameObject;
+            }
+            else
+            {
+                // Try old Weapon system
+                Weapon oldWeapon = hit.transform.GetComponent<Weapon>();
+                if (oldWeapon != null && IsWeaponOnGround(hit.transform.gameObject))
+                {
+                    weaponObject = hit.transform.gameObject;
+                }
+            }
+
+            if (weaponObject != null)
             {
                 // Highlight weapon
-                HighlightWeapon(weaponComponent);
+                HighlightWeapon(weaponObject);
 
                 // Handle pickup input
                 if (interactAction?.WasPressedThisFrame() == true)
                 {
-                    WeaponManager.Instance.PickupWeapon(hit.transform.gameObject);
+                    WeaponManager.Instance.PickupWeapon(weaponObject);
                 }
             }
             else
@@ -71,14 +87,14 @@ public class InteractionManager : MonoBehaviour
     }
 
     // Check if weapon is on ground (not in player's hands)
-    private bool IsWeaponOnGround(Weapon weapon)
+    private bool IsWeaponOnGround(GameObject weaponObject)
     {
-        return weapon.transform.parent == null ||
-               !weapon.transform.parent.name.Contains("Slot");
+        return weaponObject.transform.parent == null ||
+               !weaponObject.transform.parent.name.Contains("Slot");
     }
 
     // Highlight the weapon
-    private void HighlightWeapon(Weapon weapon)
+    private void HighlightWeapon(GameObject weapon)
     {
         // Clear previous highlight
         if (hoveredWeapon != null && hoveredWeapon != weapon)

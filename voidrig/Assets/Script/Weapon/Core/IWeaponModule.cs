@@ -1,4 +1,4 @@
-//IWeaponModule.cs
+//IWeaponModule.cs - Updated with all enums
 using System;
 using UnityEngine;
 using System.Collections;
@@ -63,6 +63,7 @@ public interface IDamageable
     bool HasShield(ShieldBypassType shieldType);
 }
 
+// === ENUMS ===
 public enum ProjectileType
 {
     Physical,
@@ -99,6 +100,7 @@ public enum ShieldType
     Energy
 }
 
+// === DATA CLASSES ===
 [System.Serializable]
 public class ProjectileData
 {

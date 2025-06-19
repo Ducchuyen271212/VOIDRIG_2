@@ -1,4 +1,4 @@
-// ModularBullet.cs
+// ModularBullet.cs - Fixed with null checks
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -44,8 +44,16 @@ public class ModularBullet : MonoBehaviour
     private float probabilityOfExistence = 1f;
     private int quantumStateId = 0;
 
+    // Cache components
+    private Renderer cachedRenderer;
+    private Collider cachedCollider;
+
     private void Start()
     {
+        // Cache components
+        cachedRenderer = GetComponent<Renderer>();
+        cachedCollider = GetComponent<Collider>();
+
         if (projectileData != null)
         {
             penetrationsLeft = projectileData.maxPenetrations;
@@ -65,13 +73,17 @@ public class ModularBullet : MonoBehaviour
         if (hasQuantumProperties && UnityEngine.Random.Range(0f, 1f) > probabilityOfExistence)
         {
             // Quantum decoherence - bullet temporarily doesn't exist
-            GetComponent<Collider>().enabled = false;
-            GetComponent<Renderer>().enabled = false;
+            if (cachedCollider != null)
+                cachedCollider.enabled = false;
+            if (cachedRenderer != null)
+                cachedRenderer.enabled = false;
         }
         else
         {
-            GetComponent<Collider>().enabled = true;
-            GetComponent<Renderer>().enabled = true;
+            if (cachedCollider != null)
+                cachedCollider.enabled = true;
+            if (cachedRenderer != null)
+                cachedRenderer.enabled = true;
         }
 
         // Handle plasma energy decay
@@ -89,7 +101,10 @@ public class ModularBullet : MonoBehaviour
     {
         this.projectileData = data;
         this.weaponData = weaponData;
-        penetrationsLeft = data.maxPenetrations;
+        if (data != null)
+        {
+            penetrationsLeft = data.maxPenetrations;
+        }
     }
 
     // === PROPERTY SETTERS ===
@@ -162,6 +177,13 @@ public class ModularBullet : MonoBehaviour
         GameObject hitObject = collision.gameObject;
         ContactPoint contact = collision.contacts[0];
 
+        // === IGNORE ALL WEAPONS ===
+        if (IsWeapon(hitObject))
+        {
+            Debug.Log($"ModularBullet ignoring weapon: {hitObject.name}");
+            return; // Don't process collision with weapons
+        }
+
         // Check for special bypasses
         if (ShouldBypassCollision(hitObject))
         {
@@ -185,7 +207,7 @@ public class ModularBullet : MonoBehaviour
         }
 
         // Handle penetration
-        if (projectileData.penetratesTargets && penetrationsLeft > 0)
+        if (projectileData != null && projectileData.penetratesTargets && penetrationsLeft > 0)
         {
             penetrationsLeft--;
             shouldDestroy = false;
@@ -242,7 +264,7 @@ public class ModularBullet : MonoBehaviour
         }
 
         // Check bypass types
-        if (projectileData.bypassTypes != null)
+        if (projectileData?.bypassTypes != null)
         {
             foreach (var bypassType in projectileData.bypassTypes)
             {
@@ -294,7 +316,7 @@ public class ModularBullet : MonoBehaviour
         if (hasAntimatterProperties || (hasExplosiveProperties && explosionDamage > 100f))
         {
             var destructible = target.GetComponent<DestructibleEnvironment>();
-            if (destructible != null)
+            if (destructible != null && projectileData != null)
             {
                 destructible.TakeDamage(projectileData.damage * damageMultiplier);
             }
@@ -312,7 +334,7 @@ public class ModularBullet : MonoBehaviour
         }
 
         // Some projectiles bounce off each other
-        if (projectileData.type == ProjectileType.Physical)
+        if (projectileData != null && projectileData.type == ProjectileType.Physical)
         {
             return false; // Don't destroy, let physics handle it
         }
@@ -322,7 +344,8 @@ public class ModularBullet : MonoBehaviour
 
     private DamageInfo CreateDamageInfo(ContactPoint contact)
     {
-        float finalDamage = projectileData.damage * damageMultiplier * chargeLevel;
+        float baseDamage = projectileData?.damage ?? 10f;
+        float finalDamage = baseDamage * damageMultiplier * chargeLevel;
 
         // Apply weapon-specific damage bonuses
         if (weaponData != null)
@@ -333,8 +356,8 @@ public class ModularBullet : MonoBehaviour
         return new DamageInfo
         {
             damage = finalDamage,
-            projectileType = projectileData.type,
-            bypassTypes = projectileData.bypassTypes,
+            projectileType = projectileData?.type ?? ProjectileType.Physical,
+            bypassTypes = projectileData?.bypassTypes,
             hitPoint = contact.point,
             hitNormal = contact.normal,
             chargeLevel = chargeLevel,
@@ -344,7 +367,7 @@ public class ModularBullet : MonoBehaviour
 
     private void CreateImpactEffect(ContactPoint contact)
     {
-        if (projectileData.impactEffect != null)
+        if (projectileData?.impactEffect != null)
         {
             GameObject effect = Instantiate(
                 projectileData.impactEffect,
@@ -366,15 +389,29 @@ public class ModularBullet : MonoBehaviour
             );
             hole.transform.SetParent(contact.otherCollider.transform);
         }
+        else if (GlobalReferences.Instance?.bulletImpactEffectPrefab != null) // Handle typo in your code
+        {
+            GameObject hole = Instantiate(
+                GlobalReferences.Instance.bulletImpactEffectPrefab,
+                contact.point,
+                Quaternion.LookRotation(contact.normal)
+            );
+            hole.transform.SetParent(contact.otherCollider.transform);
+        }
     }
 
     private void SetEffectColor(GameObject effect)
     {
+        if (effect == null || projectileData == null) return;
+
         var particles = effect.GetComponentsInChildren<ParticleSystem>();
         foreach (var particle in particles)
         {
-            var main = particle.main;
-            main.startColor = projectileData.projectileColor;
+            if (particle != null)
+            {
+                var main = particle.main;
+                main.startColor = projectileData.projectileColor;
+            }
         }
     }
 
@@ -394,8 +431,8 @@ public class ModularBullet : MonoBehaviour
                 DamageInfo explosionDamageInfo = new DamageInfo
                 {
                     damage = explosionDamage * damageRatio,
-                    projectileType = projectileData.type,
-                    bypassTypes = projectileData.bypassTypes,
+                    projectileType = projectileData?.type ?? ProjectileType.Explosive,
+                    bypassTypes = projectileData?.bypassTypes,
                     hitPoint = position,
                     hitNormal = Vector3.up
                 };
@@ -458,68 +495,32 @@ public class ModularBullet : MonoBehaviour
         // Destroy after effect
         Destroy(effect, 1f);
     }
-}
 
-// Shield component
-public class Shield : MonoBehaviour
-{
-    public ShieldType shieldType;
-    public float shieldStrength = 100f;
-    public float maxShieldStrength = 100f;
-
-    public bool CanBlock(DamageInfo damageInfo)
+    // === WEAPON DETECTION ===
+    private bool IsWeapon(GameObject obj)
     {
-        if (shieldStrength <= 0) return false;
+        // Check for weapon components
+        if (obj.GetComponent<ModularWeapon>() != null) return true;
+        if (obj.GetComponent<Weapon>() != null) return true;
 
-        ShieldBypassType requiredBypass = shieldType == ShieldType.Physical
-            ? ShieldBypassType.PhysicalShield
-            : ShieldBypassType.EnergyShield;
+        // Check for weapon tags
+        if (obj.CompareTag("MachineGun")) return true;
+        if (obj.CompareTag("ShotGun")) return true;
+        if (obj.CompareTag("Sniper")) return true;
+        if (obj.CompareTag("HandGun")) return true;
+        if (obj.CompareTag("SMG")) return true;
+        if (obj.CompareTag("BurstRifle")) return true;
 
-        return !damageInfo.CanBypass(requiredBypass);
+        // Check name patterns (common weapon naming)
+        string objName = obj.name.ToLower();
+        if (objName.Contains("weapon") ||
+            objName.Contains("gun") ||
+            objName.Contains("rifle") ||
+            objName.Contains("pistol") ||
+            objName.Contains("shotgun") ||
+            objName.Contains("sniper") ||
+            objName.Contains("test")) return true;
+
+        return false;
     }
 }
-
-// Armor component
-public class Armor : MonoBehaviour
-{
-    public float armorValue = 50f;
-    public bool immuneToPlasma = false;
-}
-
-// Destructible environment
-public class DestructibleEnvironment : MonoBehaviour
-{
-    public float health = 100f;
-
-    public void TakeDamage(float damage)
-    {
-        health -= damage;
-        if (health <= 0)
-        {
-            Destroy(gameObject);
-        }
-    }
-}
-
-// Global references helper (optional)
-public class GlobalReferences : MonoBehaviour
-{
-    public static GlobalReferences Instance { get; private set; }
-
-    [Header("Bullet Effects")]
-    public GameObject bulletImpactEffectPrefab;
-
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-}
-// end

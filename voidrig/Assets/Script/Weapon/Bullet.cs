@@ -8,7 +8,16 @@ public class Bullet : MonoBehaviour
     private void OnCollisionEnter(Collision objectHit)
     {
         GameObject hitObject = objectHit.gameObject;
-
+        // IGNORE WEAPONS COMPLETELY
+        if (hitObject.GetComponent<ModularWeapon>() != null ||
+            hitObject.GetComponent<Weapon>() != null ||
+            hitObject.name.Contains("Weapon") ||
+            hitObject.name.Contains("Gun") ||
+            hitObject.name.Contains("Rifle"))
+        {
+            Physics.IgnoreCollision(GetComponent<Collider>(), hitObject.GetComponent<Collider>());
+            return; // Don't process this collision
+        }
         // Apply damage if the object has a health component
         if (hitObject.CompareTag("Enemy"))
         {
@@ -34,7 +43,7 @@ public class Bullet : MonoBehaviour
         ContactPoint contact = objectHit.contacts[0];
 
         GameObject hole = Instantiate(
-            GlobalRefrences.Instance.bulletImpactEffectPrefab,
+            GlobalReferences.Instance.bulletImpactEffectPrefab,
             contact.point,
             Quaternion.LookRotation(contact.normal)
         );

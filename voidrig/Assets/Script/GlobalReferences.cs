@@ -1,21 +1,38 @@
-//GlobalReferences.cs
+//GlobalReferences.cs - Fixed Version
 using UnityEngine;
 
-public class GlobalRefrences : MonoBehaviour
+public class GlobalReferences : MonoBehaviour
 {
-    public static GlobalRefrences Instance { get; private set; }
+    public static GlobalReferences Instance { get; private set; }
 
-    public GameObject bulletImpactEffectPrefab; // Prefab for bullet impact effect
+    [Header("Bullet Effects")]
+    public GameObject bulletImpactEffectPrefab;
+
+    [Header("Explosion Effects")]
+    public GameObject explosionEffectPrefab;
+
+    [Header("Muzzle Effects")]
+    public GameObject muzzleFlashEffectPrefab;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-        else if (Instance != this)
+        else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnValidate()
+    {
+        // Help message in inspector
+        if (bulletImpactEffectPrefab == null)
+        {
+            Debug.LogWarning("GlobalReferences: No bullet impact effect prefab assigned!");
         }
     }
 }

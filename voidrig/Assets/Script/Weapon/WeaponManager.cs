@@ -1,3 +1,4 @@
+// WeaponManager.cs
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -55,7 +56,15 @@ public class WeaponManager : MonoBehaviour
                 var modularWeapon = slot.transform.GetChild(0).GetComponent<ModularWeapon>();
                 if (modularWeapon != null)
                 {
+                    bool wasActive = modularWeapon.isActiveWeapon;
                     modularWeapon.isActiveWeapon = isActive;
+
+                    // Debug logging for unexpected deactivation
+                    if (wasActive && !isActive)
+                    {
+                        Debug.Log($"=== WEAPON DEACTIVATED BY WEAPONMANAGER === {modularWeapon.weaponName} in slot {slot.name}");
+                        Debug.Log($"Active slot: {activeWeaponSlot?.name}, Current slot: {slot.name}");
+                    }
                 }
             }
         }
@@ -78,6 +87,7 @@ public class WeaponManager : MonoBehaviour
     {
         if (index >= 0 && index < weaponSlots.Count)
         {
+            Debug.Log($"Switching to slot {index}");
             DeactivateAllWeapons();
             activeWeaponSlot = weaponSlots[index];
         }
@@ -89,12 +99,14 @@ public class WeaponManager : MonoBehaviour
 
         int currentIndex = weaponSlots.IndexOf(activeWeaponSlot);
         int nextIndex = (currentIndex + 1) % weaponSlots.Count;
+        Debug.Log($"Switching from slot {currentIndex} to slot {nextIndex}");
         DeactivateAllWeapons();
         activeWeaponSlot = weaponSlots[nextIndex];
     }
 
     private void DeactivateAllWeapons()
     {
+        Debug.Log("DeactivateAllWeapons called");
         AimingManager.Instance?.ForceStopAiming();
 
         foreach (var slot in weaponSlots)
@@ -104,6 +116,7 @@ public class WeaponManager : MonoBehaviour
                 var mw = slot.transform.GetChild(0).GetComponent<ModularWeapon>();
                 if (mw != null)
                 {
+                    Debug.Log($"Deactivating weapon: {mw.weaponName} in slot: {slot.name}");
                     mw.isActiveWeapon = false;
                 }
             }
@@ -170,6 +183,7 @@ public class WeaponManager : MonoBehaviour
         modularWeapon.SetupInput();
 
         // Activate weapon
+        Debug.Log($"Activating weapon: {modularWeapon.weaponName}");
         modularWeapon.isActiveWeapon = true;
 
         // Update UI
@@ -212,3 +226,4 @@ public class WeaponManager : MonoBehaviour
         return activeWeaponSlot != null && activeWeaponSlot.transform.childCount > 0;
     }
 }
+// end
