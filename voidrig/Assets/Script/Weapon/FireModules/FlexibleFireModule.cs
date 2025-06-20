@@ -1,11 +1,11 @@
-//FlexibleFireModule.cs - Complete flexible fire system
+// FlexibleFireModule.cs
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
 public class FlexibleFireModule : MonoBehaviour, IFireModule
 {
-    [Header("Available Fire Modes - Check the ones you want")]
+    [Header("Available Fire Modes")]
     public bool allowSingle = true;
     public bool allowBurst = true;
     public bool allowAuto = false;
@@ -14,14 +14,18 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
     [SerializeField] private FireMode currentMode = FireMode.Single;
     [SerializeField] private int currentModeIndex = 0;
 
+    [Header("Fire Rate Settings")]
+    public float singleFireRate = 0.3f;
+    public float autoFireRate = 0.1f;
+    public float burstCooldown = 0.5f;
+
     [Header("Burst Settings")]
     public int burstCount = 3;
     public float burstInterval = 0.1f;
 
-    [Header("Auto Settings")]
-    public float autoFireRate = 0.1f;
+    [Header("Debug")]
+    public bool enableDebugLogs = true;
 
-    // Internal state
     private ModularWeapon weapon;
     private List<FireMode> availableModes = new List<FireMode>();
     private bool isFirePressed = false;
@@ -29,39 +33,14 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
     private float lastFireTime = -1f;
     private bool isFiring = false;
     private bool isBursting = false;
-    private Coroutine autoFireCoroutine;
+    private Coroutine fireCoroutine;
 
     public void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
         SetupAvailableModes();
-
-        // Get settings from weapon data if available
-        if (weapon.WeaponData != null)
-        {
-            burstCount = weapon.WeaponData.bulletsPerBurst;
-            burstInterval = weapon.WeaponData.burstFireInterval;
-            autoFireRate = weapon.WeaponData.fireRate;
-        }
-
-        Debug.Log($"FlexibleFireModule initialized with {availableModes.Count} modes: {string.Join(", ", availableModes)}");
-        Debug.Log($"Starting mode: {currentMode}");
+        DebugLog($"FlexibleFireModule initialized with {availableModes.Count} modes");
     }
-
-    public void OnWeaponActivated()
-    {
-        isFiring = false;
-        lastFireTime = -1f;
-        StopAutoFire();
-    }
-
-    public void OnWeaponDeactivated()
-    {
-        isFiring = false;
-        StopAutoFire();
-    }
-
-    public void OnUpdate() { }
 
     private void SetupAvailableModes()
     {
@@ -73,30 +52,37 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
 
         if (availableModes.Count == 0)
         {
-            Debug.LogWarning("No fire modes enabled! Adding Single mode as fallback.");
             availableModes.Add(FireMode.Single);
             allowSingle = true;
         }
 
-        // Set current mode to first available
         currentMode = availableModes[0];
         currentModeIndex = 0;
     }
 
+    public void OnWeaponActivated()
+    {
+        StopAllFiring();
+        DebugLog($"Activated in {currentMode} mode");
+    }
+
+    public void OnWeaponDeactivated()
+    {
+        StopAllFiring();
+    }
+
+    public void OnUpdate()
+    {
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            SwitchMode();
+        }
+    }
+
     public bool CanFire()
     {
-        if (weapon?.WeaponData == null) return false;
-
-        // Cannot fire while reloading
-        var ammoModule = weapon.GetAmmoModule() as StandardAmmoModule;
-        if (ammoModule != null && ammoModule.IsReloading())
-        {
-            return false;
-        }
-
         bool hasAmmo = weapon.GetAmmoModule()?.GetCurrentAmmo() > 0;
         bool fireRateOK = Time.time >= lastFireTime + GetCurrentFireRate();
-
         return hasAmmo && fireRateOK && !isFiring;
     }
 
@@ -105,38 +91,23 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         isFirePressed = isPressed;
         wasFirePressed = wasPressed;
 
-        Debug.Log($"Fire input - Pressed: {isPressed}, WasPressed: {wasPressed}, Mode: {currentMode}");
-
-        // Handle mode switching
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            SwitchMode();
-        }
-
-        // Handle firing based on current mode
         switch (currentMode)
         {
             case FireMode.Single:
                 if (wasPressed && CanFire())
-                {
                     StartCoroutine(FireSingle());
-                }
                 break;
 
             case FireMode.Burst:
                 if (wasPressed && CanFire() && !isBursting)
-                {
                     StartCoroutine(FireBurst());
-                }
                 break;
 
             case FireMode.Auto:
                 if (isPressed && CanFire())
                 {
-                    if (autoFireCoroutine == null)
-                    {
-                        autoFireCoroutine = StartCoroutine(FireAuto());
-                    }
+                    if (fireCoroutine == null)
+                        fireCoroutine = StartCoroutine(FireAuto());
                 }
                 else if (!isPressed)
                 {
@@ -148,13 +119,11 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
 
     public IEnumerator Fire()
     {
-        // This method is called by the interface, but we handle firing in OnFireInput
         yield break;
     }
 
     private IEnumerator FireSingle()
     {
-        Debug.Log("Firing single shot");
         isFiring = true;
 
         if (FireProjectile())
@@ -163,84 +132,53 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
             PlayFireEffects();
         }
 
-        yield return new WaitForSeconds(GetCurrentFireRate());
+        yield return new WaitForSeconds(singleFireRate);
         isFiring = false;
     }
 
     private IEnumerator FireBurst()
     {
-        Debug.Log($"Starting burst fire - {burstCount} rounds");
         isFiring = true;
         isBursting = true;
 
-        for (int i = 0; i < burstCount; i++)
+        int shotsToFire = Mathf.Min(burstCount, weapon.GetAmmoModule().GetCurrentAmmo());
+
+        for (int i = 0; i < shotsToFire; i++)
         {
-            var ammoModule = weapon.GetAmmoModule();
-            if (ammoModule?.GetCurrentAmmo() <= 0)
-            {
-                Debug.Log("Burst interrupted - out of ammo");
-                break;
-            }
+            if (weapon.GetAmmoModule().GetCurrentAmmo() <= 0) break;
 
             if (FireProjectile())
-            {
                 PlayFireEffects();
-                Debug.Log($"Burst shot {i + 1}/{burstCount}");
-            }
 
-            if (i < burstCount - 1) // Don't wait after the last shot
-            {
+            if (i < shotsToFire - 1)
                 yield return new WaitForSeconds(burstInterval);
-            }
         }
 
         lastFireTime = Time.time;
-        yield return new WaitForSeconds(GetCurrentFireRate());
+        yield return new WaitForSeconds(burstCooldown);
 
         isBursting = false;
         isFiring = false;
-        Debug.Log("Burst complete");
     }
 
     private IEnumerator FireAuto()
     {
-        Debug.Log("Starting auto fire");
         isFiring = true;
 
-        while (isFirePressed)
+        while (isFirePressed && weapon.GetAmmoModule().GetCurrentAmmo() > 0)
         {
-            var ammoModule = weapon.GetAmmoModule();
-            if (ammoModule?.GetCurrentAmmo() <= 0)
-            {
-                Debug.Log("Auto fire stopped - out of ammo");
-                break;
-            }
-
             if (Time.time >= lastFireTime + autoFireRate)
             {
                 if (FireProjectile())
                 {
                     PlayFireEffects();
                     lastFireTime = Time.time;
-                    Debug.Log("Auto fire shot");
                 }
             }
-
-            yield return null; // Wait one frame
+            yield return null;
         }
 
         StopAutoFire();
-        Debug.Log("Auto fire stopped");
-    }
-
-    private void StopAutoFire()
-    {
-        if (autoFireCoroutine != null)
-        {
-            StopCoroutine(autoFireCoroutine);
-            autoFireCoroutine = null;
-        }
-        isFiring = false;
     }
 
     private bool FireProjectile()
@@ -249,81 +187,69 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         var targetingModule = weapon.GetTargetingModule();
         var ammoModule = weapon.GetAmmoModule();
 
-        if (projectileModule == null || ammoModule == null)
-        {
-            Debug.LogError("Missing required modules for firing");
-            return false;
-        }
-
-        if (!ammoModule.ConsumeAmmo())
-        {
-            Debug.Log("Failed to consume ammo");
-            return false;
-        }
+        if (!ammoModule.ConsumeAmmo(1)) return false;
 
         Vector3 baseDirection = weapon.CalculateBaseDirection();
         Vector3 finalDirection = targetingModule?.CalculateDirection(baseDirection) ?? baseDirection;
 
-        GameObject projectile = projectileModule.CreateProjectile(
+        projectileModule?.CreateProjectile(
             weapon.FirePoint.position,
             finalDirection,
-            weapon.WeaponData?.bulletVelocity ?? 100f
+            100f
         );
 
-        return projectile != null;
+        return true;
     }
 
     private void PlayFireEffects()
     {
-        weapon.SetAnimationTrigger("Recoil");
-        weapon.PlaySound(weapon.WeaponSound?.shootClip);
+        Debug.Log("Fire effects played");
     }
 
     private float GetCurrentFireRate()
     {
-        return weapon.WeaponData?.fireRate ?? 0.1f;
+        switch (currentMode)
+        {
+            case FireMode.Single: return singleFireRate;
+            case FireMode.Auto: return autoFireRate;
+            case FireMode.Burst: return burstCooldown;
+            default: return singleFireRate;
+        }
+    }
+
+    private void StopAutoFire()
+    {
+        if (fireCoroutine != null)
+        {
+            StopCoroutine(fireCoroutine);
+            fireCoroutine = null;
+        }
+        isFiring = false;
+    }
+
+    private void StopAllFiring()
+    {
+        StopAutoFire();
+        isBursting = false;
+        isFiring = false;
     }
 
     public void SwitchMode()
     {
-        if (availableModes.Count <= 1)
-        {
-            Debug.Log("Only one fire mode available");
-            return;
-        }
+        if (availableModes.Count <= 1) return;
+
+        StopAllFiring();
 
         currentModeIndex = (currentModeIndex + 1) % availableModes.Count;
         currentMode = availableModes[currentModeIndex];
 
-        // Stop any ongoing firing when switching modes
-        StopAutoFire();
-        isBursting = false;
-        isFiring = false;
-
-        Debug.Log($"=== SWITCHED TO MODE: {currentMode} ({currentModeIndex + 1}/{availableModes.Count}) ===");
+        DebugLog($"Switched to {currentMode} mode");
     }
 
-    public string GetCurrentModeText()
+    private void DebugLog(string message)
     {
-        return $"{currentMode.ToString().ToUpper()} ({currentModeIndex + 1}/{availableModes.Count})";
-    }
-
-    // Method to change available modes at runtime
-    public void SetAvailableModes(bool single, bool burst, bool auto)
-    {
-        allowSingle = single;
-        allowBurst = burst;
-        allowAuto = auto;
-        SetupAvailableModes();
-    }
-
-    private void OnValidate()
-    {
-        // Ensure at least one mode is selected
-        if (!allowSingle && !allowBurst && !allowAuto)
-        {
-            allowSingle = true;
-        }
+        if (enableDebugLogs)
+            Debug.Log($"[FlexibleFireModule] {message}");
     }
 }
-//end
+// end

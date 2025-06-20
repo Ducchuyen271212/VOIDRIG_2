@@ -1,48 +1,83 @@
 //PlasmaProjectileModule.cs
 using UnityEngine;
 
-public class PlasmaProjectileModule : BaseProjectileModule
+public class PlasmaProjectileModule : MonoBehaviour, IProjectileModule
 {
-    [Header("Plasma Settings")]
+    [Header("Plasma Projectile Settings")]
+    public GameObject projectilePrefab;
+    public float damage = 35f;
+    public float velocity = 120f;
+    public float lifetime = 3f;
+    public Color plasmaColor = Color.magenta;
+
+    [Header("Plasma Properties")]
     public float energyDecay = 0.1f;
     public bool burnsThroughArmor = true;
 
-    public override GameObject CreateProjectile(Vector3 position, Vector3 direction, float velocity)
+    private ModularWeapon weapon;
+
+    public void Initialize(ModularWeapon weapon)
     {
-        GameObject projectile = InstantiateProjectile(position, direction, velocity);
+        this.weapon = weapon;
+        Debug.Log("PlasmaProjectileModule initialized");
+    }
 
-        if (projectile != null)
+    public void OnWeaponActivated() { }
+    public void OnWeaponDeactivated() { }
+    public void OnUpdate() { }
+
+    public GameObject CreateProjectile(Vector3 position, Vector3 direction, float velocity)
+    {
+        if (projectilePrefab == null) return null;
+
+        GameObject projectile = Instantiate(projectilePrefab, position, Quaternion.LookRotation(direction));
+
+        // Set damage
+        var bullet = projectile.GetComponent<Bullet>();
+        if (bullet != null) bullet.damage = damage;
+
+        var modularBullet = projectile.GetComponent<ModularCompatibleBullet>();
+        if (modularBullet != null)
         {
-            var bullet = projectile.GetComponent<ModularBullet>();
-            bullet?.SetPlasmaProperties(energyDecay, burnsThroughArmor);
-
-            // Add plasma effects
-            AddPlasmaEffects(projectile);
+            modularBullet.damage = damage;
+            modularBullet.projectileType = ProjectileType.Plasma;
         }
 
+        var fullBullet = projectile.GetComponent<ModularBullet>();
+        if (fullBullet != null)
+        {
+            fullBullet.SetPlasmaProperties(energyDecay, burnsThroughArmor);
+        }
+
+        // Apply velocity
+        var rb = projectile.GetComponent<Rigidbody>();
+        if (rb != null) rb.linearVelocity = direction * velocity;
+
+        // Add plasma effects
+        AddPlasmaEffects(projectile);
+
+        Destroy(projectile, lifetime);
         return projectile;
     }
 
     private void AddPlasmaEffects(GameObject projectile)
     {
-        // Add particle system for plasma trail
-        var particles = projectile.GetComponentInChildren<ParticleSystem>();
-        if (particles != null)
+        var renderer = projectile.GetComponent<Renderer>();
+        if (renderer != null)
         {
-            var main = particles.main;
-            main.startColor = projectileData.projectileColor;
-            main.startLifetime = 2f;
+            renderer.material.color = plasmaColor;
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", plasmaColor * 3f);
         }
 
-        // Add light component for glow
-        Light plasmaLight = projectile.GetComponent<Light>();
-        if (plasmaLight == null)
-        {
-            plasmaLight = projectile.AddComponent<Light>();
-        }
-        plasmaLight.color = projectileData.projectileColor;
-        plasmaLight.intensity = 2f;
-        plasmaLight.range = 5f;
+        // Add plasma glow
+        var light = projectile.GetComponent<Light>();
+        if (light == null) light = projectile.AddComponent<Light>();
+        light.color = plasmaColor;
+        light.intensity = 3f;
+        light.range = 4f;
     }
+
+    public ProjectileType GetProjectileType() => ProjectileType.Plasma;
 }
 //end

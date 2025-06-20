@@ -1,4 +1,4 @@
-// StandardAmmoModule.cs - Fixed Version
+// StandardAmmoModule.cs
 using System.Collections;
 using UnityEngine;
 
@@ -16,42 +16,17 @@ public class StandardAmmoModule : MonoBehaviour, IAmmoModule
     public void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
-
-        Debug.Log($"StandardAmmoModule.Initialize called for {weapon?.weaponName}");
-
-        if (weapon?.WeaponData != null)
-        {
-            maxMagazine = weapon.WeaponData.magazineCapacity;
-            reloadTime = weapon.WeaponData.reloadTime;
-
-            Debug.Log($"Weapon data found - Max Magazine: {maxMagazine}, Reload Time: {reloadTime}");
-
-            // Only reset ammo if we haven't been initialized with proper values yet
-            if (currentMagazine == 30 && totalAmmo == 120) // Default inspector values
-            {
-                Debug.Log("Setting initial ammo from weapon data");
-                currentMagazine = maxMagazine;
-                totalAmmo = weapon.WeaponData.totalAmmo;
-            }
-
-            Debug.Log($"Current ammo state - Magazine: {currentMagazine}/{maxMagazine}, Total: {totalAmmo}");
-        }
-        else
-        {
-            Debug.LogWarning("No weapon data available during ammo module initialization");
-        }
+        Debug.Log("StandardAmmoModule initialized");
     }
 
     public void OnWeaponActivated()
     {
-        // Stop any reload in progress when switching weapons
         StopAllCoroutines();
         isReloading = false;
     }
 
     public void OnWeaponDeactivated()
     {
-        // Stop reload if switching weapons
         StopAllCoroutines();
         isReloading = false;
     }
@@ -59,8 +34,8 @@ public class StandardAmmoModule : MonoBehaviour, IAmmoModule
     public void OnUpdate() { }
 
     public int GetCurrentAmmo() => currentMagazine;
-
     public int GetTotalAmmo() => totalAmmo;
+    public bool IsReloading() => isReloading;
 
     public bool ConsumeAmmo(int amount = 1)
     {
@@ -76,16 +51,9 @@ public class StandardAmmoModule : MonoBehaviour, IAmmoModule
             return true;
         }
 
-        // Play empty sound if available
-        if (weapon?.WeaponSound?.emptyClip != null)
-        {
-            weapon.PlaySound(weapon.WeaponSound.emptyClip);
-        }
-
+        Debug.Log("Out of ammo!");
         return false;
     }
-
-    public bool IsReloading() => isReloading;
 
     public bool CanReload()
     {
@@ -97,17 +65,7 @@ public class StandardAmmoModule : MonoBehaviour, IAmmoModule
         if (!CanReload()) yield break;
 
         isReloading = true;
-
-        // Play reload animation
-        weapon?.SetAnimationTrigger("Reload");
-
-        // Play reload sound
-        if (weapon?.WeaponSound?.reloadClip != null)
-        {
-            weapon.PlaySound(weapon.WeaponSound.reloadClip);
-        }
-
-        Debug.Log($"Reloading {weapon?.weaponName} for {reloadTime} seconds...");
+        Debug.Log($"Reloading for {reloadTime} seconds...");
 
         yield return new WaitForSeconds(reloadTime);
 
@@ -119,10 +77,6 @@ public class StandardAmmoModule : MonoBehaviour, IAmmoModule
         totalAmmo -= ammoToReload;
 
         Debug.Log($"Reload complete! Current: {currentMagazine}, Total: {totalAmmo}");
-
-        // Play reload complete animation
-        weapon?.SetAnimationTrigger("ReloadRecover");
-
         isReloading = false;
     }
 

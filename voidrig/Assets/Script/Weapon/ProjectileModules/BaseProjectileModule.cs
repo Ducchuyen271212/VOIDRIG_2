@@ -6,8 +6,9 @@ public abstract class BaseProjectileModule : MonoBehaviour, IProjectileModule
     [Header("Projectile Settings")]
     public GameObject projectilePrefab;
     public ProjectileType projectileType = ProjectileType.Physical;
-    public ProjectileData projectileData;
-
+    public float damage = 25f;
+    public float velocity = 100f;
+    public float lifetime = 5f;
 
     protected ModularWeapon weapon;
 
@@ -26,34 +27,18 @@ public abstract class BaseProjectileModule : MonoBehaviour, IProjectileModule
 
         GameObject projectile = Instantiate(projectilePrefab, position, Quaternion.LookRotation(direction));
 
-        // Set damage if using your existing Bullet system
+        // Set damage
         var bullet = projectile.GetComponent<Bullet>();
-        if (bullet != null && weapon.WeaponData != null)
+        if (bullet != null)
         {
-            bullet.damage = weapon.WeaponData.damage;
+            bullet.damage = damage;
         }
 
-        // Set damage if using ModularCompatibleBullet
         var modularBullet = projectile.GetComponent<ModularCompatibleBullet>();
-        if (modularBullet != null && weapon.WeaponData != null)
+        if (modularBullet != null)
         {
-            modularBullet.damage = weapon.WeaponData.damage;
+            modularBullet.damage = damage;
             modularBullet.projectileType = projectileType;
-        }
-
-        // Set damage if using ModularBullet
-        var fullModularBullet = projectile.GetComponent<ModularBullet>();
-        if (fullModularBullet != null)
-        {
-            // Create projectile data
-            ProjectileData data = new ProjectileData
-            {
-                type = projectileType,
-                damage = weapon.WeaponData?.damage ?? 10f,
-                velocity = velocity,
-                lifetime = weapon.WeaponData?.bulletLifeTime ?? 5f
-            };
-            fullModularBullet.Initialize(data, weapon.WeaponData);
         }
 
         // Apply velocity
@@ -64,32 +49,11 @@ public abstract class BaseProjectileModule : MonoBehaviour, IProjectileModule
         }
 
         // Destroy after lifetime
-        float lifetime = weapon.WeaponData?.bulletLifeTime ?? 5f;
         Destroy(projectile, lifetime);
 
         return projectile;
     }
 
     public ProjectileType GetProjectileType() => projectileType;
-
-    protected GameObject InstantiateProjectile(Vector3 position, Vector3 direction, float velocity)
-    {
-        if (projectilePrefab == null) return null;
-
-        GameObject instance = Instantiate(projectilePrefab, position, Quaternion.LookRotation(direction));
-        Rigidbody rb = instance.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.linearVelocity = direction * velocity;
-        }
-
-        ModularBullet bullet = instance.GetComponent<ModularBullet>();
-        if (bullet != null)
-        {
-            bullet.Initialize(projectileData, weapon?.WeaponData);
-        }
-
-        return instance;
-    }
-
 }
+// end

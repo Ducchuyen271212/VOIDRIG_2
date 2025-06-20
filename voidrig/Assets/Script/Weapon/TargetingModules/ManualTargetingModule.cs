@@ -1,12 +1,11 @@
 // ManualTargetingModule.cs
-using System;
 using UnityEngine;
 
 public class ManualTargetingModule : MonoBehaviour, ITargetingModule
 {
-
     [Header("Accuracy Settings")]
     public float baseSpread = 1f;
+    public float aimingBonus = 0.5f;
     public AnimationCurve accuracyCurve = AnimationCurve.Linear(0, 1, 1, 0.1f);
 
     private ModularWeapon weapon;
@@ -16,6 +15,7 @@ public class ManualTargetingModule : MonoBehaviour, ITargetingModule
     public void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
+        Debug.Log("ManualTargetingModule initialized");
     }
 
     public void OnWeaponActivated() { }
@@ -50,13 +50,6 @@ public class ManualTargetingModule : MonoBehaviour, ITargetingModule
     {
         float spread = baseSpread;
 
-        // Apply weapon accuracy
-        if (weapon.WeaponData != null)
-        {
-            float weaponAccuracy = weapon.WeaponData.accuracy;
-            spread *= (2f - weaponAccuracy) * weapon.WeaponData.spreadIntensity;
-        }
-
         // Apply aiming bonus
         if (isAiming && AimingManager.Instance != null)
         {
@@ -70,8 +63,8 @@ public class ManualTargetingModule : MonoBehaviour, ITargetingModule
 
         // Apply spread
         Quaternion spreadRotation = Quaternion.Euler(
-            UnityEngine.Random.Range(-spread, spread),
-            UnityEngine.Random.Range(-spread, spread),
+            Random.Range(-spread, spread),
+            Random.Range(-spread, spread),
             0
         );
 

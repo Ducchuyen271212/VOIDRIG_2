@@ -14,7 +14,6 @@ public class WeaponManager : MonoBehaviour
 
     [Header("References")]
     public GameObject player;
-    public GameObject gunDataHolder;
 
     private PlayerInput playerInput;
     private InputAction switchWeaponAction;
@@ -25,10 +24,6 @@ public class WeaponManager : MonoBehaviour
         else Destroy(gameObject);
 
         playerInput = GetComponentInParent<PlayerInput>();
-        if (gunDataHolder == null)
-        {
-            gunDataHolder = GameObject.Find("GunDataHolder");
-        }
     }
 
     private void Start()
@@ -62,7 +57,7 @@ public class WeaponManager : MonoBehaviour
                     // Debug logging for unexpected deactivation
                     if (wasActive && !isActive)
                     {
-                        Debug.Log($"=== WEAPON DEACTIVATED BY WEAPONMANAGER === {modularWeapon.weaponName} in slot {slot.name}");
+                        Debug.Log($"=== WEAPON DEACTIVATED BY WEAPONMANAGER === in slot {slot.name}");
                         Debug.Log($"Active slot: {activeWeaponSlot?.name}, Current slot: {slot.name}");
                     }
                 }
@@ -116,7 +111,7 @@ public class WeaponManager : MonoBehaviour
                 var mw = slot.transform.GetChild(0).GetComponent<ModularWeapon>();
                 if (mw != null)
                 {
-                    Debug.Log($"Deactivating weapon: {mw.weaponName} in slot: {slot.name}");
+                    Debug.Log($"Deactivating weapon in slot: {slot.name}");
                     mw.isActiveWeapon = false;
                 }
             }
@@ -143,7 +138,7 @@ public class WeaponManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Picking up weapon: {modularWeapon.weaponName}");
+        Debug.Log("Picking up weapon");
 
         // Disable physics
         Rigidbody rb = weaponObject.GetComponent<Rigidbody>();
@@ -151,10 +146,6 @@ public class WeaponManager : MonoBehaviour
 
         // Parent to active slot
         weaponObject.transform.SetParent(activeWeaponSlot.transform, false);
-
-        // Set data FIRST
-        Debug.Log("Setting gun data holder...");
-        modularWeapon.SetGunDataHolder(gunDataHolder);
 
         // Wait a frame for initialization to complete
         StartCoroutine(CompleteWeaponPickup(modularWeapon, weaponObject));
@@ -164,26 +155,18 @@ public class WeaponManager : MonoBehaviour
     {
         yield return null; // Wait one frame
 
-        // Initialize ammo
-        Debug.Log("Initializing ammo...");
-        modularWeapon.InitializeAmmo();
-
         // Position weapon
         weaponObject.transform.localPosition = modularWeapon.spawnPosition;
         weaponObject.transform.localRotation = Quaternion.Euler(modularWeapon.spawnRotation);
 
-        // Re-enable animator (it might have been disabled when dropped)
+        // Re-enable animator
         Animator animator = weaponObject.GetComponent<Animator>();
         if (animator != null)
         {
             animator.enabled = true;
         }
 
-        // Re-setup input actions for this weapon
-        modularWeapon.SetupInput();
-
         // Activate weapon
-        Debug.Log($"Activating weapon: {modularWeapon.weaponName}");
         modularWeapon.isActiveWeapon = true;
 
         // Update UI
@@ -193,7 +176,7 @@ public class WeaponManager : MonoBehaviour
         Outline outline = weaponObject.GetComponent<Outline>();
         if (outline != null) outline.enabled = false;
 
-        Debug.Log($"Weapon pickup complete for {modularWeapon.weaponName}");
+        Debug.Log("Weapon pickup complete");
     }
 
     private IEnumerator UpdateAmmoUI(ModularWeapon weapon)

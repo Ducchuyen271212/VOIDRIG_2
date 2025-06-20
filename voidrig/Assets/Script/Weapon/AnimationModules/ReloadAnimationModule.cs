@@ -5,13 +5,13 @@ using UnityEngine;
 public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
 {
     [Header("Animation Settings")]
-    public float reloadLiftAngle = 45f; // How much to lift the back of the gun (degrees)
-    public float animationSpeed = 2f; // How fast the animation plays
-    public AnimationCurve reloadCurve = AnimationCurve.EaseInOut(0, 0, 1, 1); // Animation curve for smooth motion
+    public float reloadLiftAngle = 45f;
+    public float animationSpeed = 2f;
+    public AnimationCurve reloadCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Transform Settings")]
-    public Transform weaponPivot; // The transform to rotate (usually the weapon model)
-    public bool autoFindWeaponModel = true; // Auto-find weapon model if pivot not set
+    public Transform weaponPivot;
+    public bool autoFindWeaponModel = true;
 
     private ModularWeapon weapon;
     private Vector3 originalRotation;
@@ -25,18 +25,13 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
         // Auto-find weapon model if not set
         if (autoFindWeaponModel && weaponPivot == null)
         {
-            weaponPivot = weapon.weaponModel;
-            if (weaponPivot == null)
+            Transform[] children = weapon.GetComponentsInChildren<Transform>();
+            foreach (var child in children)
             {
-                // Try to find any child with "model" in the name
-                Transform[] children = weapon.GetComponentsInChildren<Transform>();
-                foreach (var child in children)
+                if (child.name.ToLower().Contains("model") || child.name.ToLower().Contains("gun"))
                 {
-                    if (child.name.ToLower().Contains("model") || child.name.ToLower().Contains("gun"))
-                    {
-                        weaponPivot = child;
-                        break;
-                    }
+                    weaponPivot = child;
+                    break;
                 }
             }
 
@@ -52,10 +47,6 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
             originalRotation = weaponPivot.localEulerAngles;
             Debug.Log($"ReloadAnimationModule initialized with pivot: {weaponPivot.name}");
         }
-        else
-        {
-            Debug.LogError("ReloadAnimationModule: No weapon pivot found!");
-        }
     }
 
     public void OnWeaponActivated()
@@ -68,14 +59,12 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
 
     public void OnWeaponDeactivated()
     {
-        // Stop any ongoing animation
         if (currentReloadAnimation != null)
         {
             StopCoroutine(currentReloadAnimation);
             currentReloadAnimation = null;
         }
 
-        // Reset to original position
         if (weaponPivot != null)
         {
             weaponPivot.localEulerAngles = originalRotation;
@@ -98,8 +87,6 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
     {
         if (weaponPivot == null || isAnimating) return;
 
-        Debug.Log("Starting reload animation");
-
         if (currentReloadAnimation != null)
         {
             StopCoroutine(currentReloadAnimation);
@@ -112,13 +99,19 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
     {
         isAnimating = true;
 
-        float reloadDuration = weapon.WeaponData?.reloadTime ?? 2f;
+        float reloadDuration = 2f; // Default reload time
+        var ammoModule = weapon.GetAmmoModule() as StandardAmmoModule;
+        if (ammoModule != null)
+        {
+            reloadDuration = ammoModule.reloadTime;
+        }
+
         float halfDuration = reloadDuration * 0.5f;
 
         Vector3 startRotation = originalRotation;
-        Vector3 liftRotation = originalRotation + new Vector3(-reloadLiftAngle, 0, 0); // Lift back of gun
+        Vector3 liftRotation = originalRotation + new Vector3(-reloadLiftAngle, 0, 0);
 
-        // Phase 1: Lift the gun (first half of reload)
+        // Phase 1: Lift the gun
         float elapsed = 0f;
         while (elapsed < halfDuration)
         {
@@ -132,10 +125,9 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
             yield return null;
         }
 
-        // Ensure we're at the exact lift position
         weaponPivot.localEulerAngles = liftRotation;
 
-        // Phase 2: Lower the gun back (second half of reload)
+        // Phase 2: Lower the gun back
         elapsed = 0f;
         while (elapsed < halfDuration)
         {
@@ -149,29 +141,12 @@ public class ReloadAnimationModule : MonoBehaviour, IWeaponModule
             yield return null;
         }
 
-        // Ensure we're back to original position
         weaponPivot.localEulerAngles = originalRotation;
 
         isAnimating = false;
         currentReloadAnimation = null;
-
-        Debug.Log("Reload animation completed");
     }
 
-    // Manual trigger for reload animation (can be called from other scripts)
-    public void TriggerReloadAnimation()
-    {
-        StartReloadAnimation();
-    }
-
-    // Check if currently animating
     public bool IsAnimating() => isAnimating;
-
-    private void OnValidate()
-    {
-        // Clamp values in inspector
-        reloadLiftAngle = Mathf.Clamp(reloadLiftAngle, 0f, 90f);
-        animationSpeed = Mathf.Max(0.1f, animationSpeed);
-    }
 }
 // end

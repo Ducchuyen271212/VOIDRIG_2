@@ -1787,7 +1787,6 @@ GameObject:
   - component: {fileID: 8040597683205373730}
   - component: {fileID: 8040597683205373731}
   - component: {fileID: 8040597683205373733}
-  - component: {fileID: 8040597683205373732}
   - component: {fileID: 8040597683205373734}
   m_Layer: 0
   m_Name: BurstRifleTest
@@ -7805,28 +7804,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5e6ac5667cc364e93d403feb71f605, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fireMode: 0
+  displayName: Burst
+  description: 
+  fireMode: 1
+  overrideWeaponFireRate: 0
+  customFireRate: 0.1
+  overrideWeaponDamage: 0
+  damageMultiplier: 1
   currentMode: 1
   burstCount: 3
   burstInterval: 0.1
---- !u!114 &8040597683205373732
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3773d1d6d324d124089745b82f0e377a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fireMode: 0
 --- !u!114 &8040597683205373733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7834,12 +7826,18 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf66c6b454a3a5149a4a2f078737e2e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  displayName: Single
+  description: 
   fireMode: 0
+  overrideWeaponFireRate: 0
+  customFireRate: 0.1
+  overrideWeaponDamage: 0
+  damageMultiplier: 1
 --- !u!114 &8040597683205373734
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7847,7 +7845,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc9e20b79b0f5f84fa9c4cd0bf7fe935, type: 3}
   m_Name: 
@@ -7855,11 +7853,12 @@ MonoBehaviour:
   allowSingle: 1
   allowBurst: 1
   allowAuto: 0
-  currentMode: 0
+  currentMode: 1
   currentModeIndex: 0
   burstCount: 3
   burstInterval: 0.1
   autoFireRate: 0.1
+  enableDebugLogs: 1
 --- !u!114 &8092663752411394056
 MonoBehaviour:
   m_ObjectHideFlags: 0

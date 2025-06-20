@@ -1,11 +1,12 @@
-// BaseFireModule.cs
+// BaseFireModule.cs - Updated to work with FireModeController
 using System.Collections;
 using UnityEngine;
 
-public abstract class BaseFireModule : MonoBehaviour, IFireModule
+public abstract class BaseFireManager : MonoBehaviour, IFireModule
 {
     [Header("Fire Settings")]
     public FireMode fireMode = FireMode.Single;
+    public float fireRate = 0.3f;
 
     protected ModularWeapon weapon;
     protected bool isFirePressed = false;
@@ -16,6 +17,7 @@ public abstract class BaseFireModule : MonoBehaviour, IFireModule
     public virtual void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
+        Debug.Log($"BaseFireManager initialized with {fireMode} mode");
     }
 
     public virtual void OnWeaponActivated()
@@ -33,15 +35,9 @@ public abstract class BaseFireModule : MonoBehaviour, IFireModule
 
     public virtual bool CanFire()
     {
-        if (weapon.WeaponData == null) return false;
-
-        float fireRate = weapon.WeaponData.fireRate;
-        bool canFireByRate = Time.time >= lastFireTime + fireRate;
-
-        var ammoModule = weapon.GetAmmoModule();
-        bool hasAmmo = ammoModule == null || ammoModule.GetCurrentAmmo() > 0;
-
-        return canFireByRate && hasAmmo && !isFiring;
+        bool hasAmmo = weapon.GetAmmoModule()?.GetCurrentAmmo() > 0;
+        bool fireRateOK = Time.time >= lastFireTime + fireRate;
+        return hasAmmo && fireRateOK && !isFiring;
     }
 
     public virtual void OnFireInput(bool isPressed, bool wasPressed)
@@ -66,30 +62,16 @@ public abstract class BaseFireModule : MonoBehaviour, IFireModule
         var ammoModule = weapon.GetAmmoModule();
         if (ammoModule != null && !ammoModule.ConsumeAmmo(1))
         {
-            // Play empty sound
-            if (weapon.WeaponSound?.emptyClip != null)
-            {
-                weapon.PlaySound(weapon.WeaponSound.emptyClip);
-            }
+            Debug.Log("Out of ammo!");
             isFiring = false;
             yield break;
-        }
-
-        // Trigger animations
-        weapon.SetAnimationTrigger("Recoil");
-
-        // Play fire sound
-        if (weapon.WeaponSound?.shootClip != null)
-        {
-            weapon.PlaySound(weapon.WeaponSound.shootClip);
         }
 
         // Fire projectiles
         yield return FireProjectiles();
 
         // Recovery
-        weapon.SetAnimationTrigger("RecoilRecover");
-
+        yield return new WaitForSeconds(fireRate);
         isFiring = false;
     }
 
@@ -110,9 +92,9 @@ public abstract class BaseFireModule : MonoBehaviour, IFireModule
         }
 
         // Create projectile
-        float velocity = weapon.WeaponData?.bulletVelocity ?? 100f;
-        projectileModule.CreateProjectile(weapon.FirePoint.position, baseDirection, velocity);
+        projectileModule.CreateProjectile(weapon.FirePoint.position, baseDirection, 100f);
 
         yield return null;
     }
 }
+// end

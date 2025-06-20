@@ -18,15 +18,11 @@ public class EnergyAmmoModule : MonoBehaviour, IAmmoModule
     public void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
-        if (weapon.WeaponData != null)
-        {
-            maxEnergyCapacity = Mathf.RoundToInt(weapon.WeaponData.overheatThreshold);
-        }
         currentEnergy = maxEnergyCapacity;
+        Debug.Log("EnergyAmmoModule initialized");
     }
 
     public void OnWeaponActivated() { }
-
     public void OnWeaponDeactivated() { }
 
     public void OnUpdate()
@@ -38,6 +34,7 @@ public class EnergyAmmoModule : MonoBehaviour, IAmmoModule
             {
                 isOverheated = false;
                 currentEnergy = maxEnergyCapacity * 0.3f; // Start with 30% energy
+                Debug.Log("Weapon cooled down");
             }
         }
         else if (currentEnergy < maxEnergyCapacity)
@@ -48,7 +45,6 @@ public class EnergyAmmoModule : MonoBehaviour, IAmmoModule
     }
 
     public int GetCurrentAmmo() => Mathf.RoundToInt(currentEnergy);
-
     public int GetTotalAmmo() => maxEnergyCapacity;
 
     public bool ConsumeAmmo(int amount = 1)
@@ -64,12 +60,7 @@ public class EnergyAmmoModule : MonoBehaviour, IAmmoModule
             {
                 isOverheated = true;
                 overheatTimer = overheatCooldown;
-                weapon.SetAnimationTrigger("Overheat");
-
-                if (weapon.WeaponSound?.overheatClip != null)
-                {
-                    weapon.PlaySound(weapon.WeaponSound.overheatClip);
-                }
+                Debug.Log("Weapon overheated!");
             }
             return true;
         }
@@ -77,16 +68,12 @@ public class EnergyAmmoModule : MonoBehaviour, IAmmoModule
     }
 
     public bool CanReload() => false; // Energy weapons don't reload
-
-    public IEnumerator Reload()
-    {
-        yield break; // Energy weapons regenerate instead of reloading
-    }
-
+    public IEnumerator Reload() { yield break; }
     public void AddAmmo(int amount)
     {
         currentEnergy += amount;
         currentEnergy = Mathf.Min(currentEnergy, maxEnergyCapacity);
     }
 }
+
 //end

@@ -1,39 +1,33 @@
-//AimingManager.cs - Updated for ModularWeapon
+//AimingManager.cs
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class AimingManager : MonoBehaviour
 {
     public static AimingManager Instance { get; private set; }
 
     [Header("Aiming Settings")]
-    public float aimSpeed = 8f;
-    public float aimMouseSensitivityMultiplier = 0.5f;
+    public float aimFOV = 40f;
+    public float normalFOV = 60f;
+    public float aimSpeed = 5f;
+    public float accuracyMultiplier = 0.5f;
 
-    [Header("Crosshair")]
-    public GameObject normalCrosshair;
-    public GameObject aimCrosshair;
+    [Header("Aim Position")]
+    public Vector3 aimPositionOffset = new Vector3(0, 0, 0.2f);
+    public Vector3 aimRotationOffset = Vector3.zero;
 
-    // State
     public bool isAiming { get; private set; } = false;
 
-    // References
     private Camera playerCamera;
-    private PlayerInput playerInput;
-    private InputAction aimAction;
-    private ModularWeapon currentWeapon;  // Changed from Weapon to ModularWeapon
-    private MouseMovement mouseMovement;
-
-    // Current weapon aiming settings
-    private GunData.Attribute currentWeaponData;
-    private float originalFOV;
-    private float originalMouseSensitivity;
+    private ModularWeapon currentWeapon;
+    private Vector3 originalWeaponPosition;
+    private Vector3 originalWeaponRotation;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -43,191 +37,101 @@ public class AimingManager : MonoBehaviour
 
     private void Start()
     {
-        // Get camera
         playerCamera = Camera.main;
-        if (playerCamera == null) return;
-
-        // Store original FOV
-        originalFOV = playerCamera.fieldOfView;
-
-        // Get player input
-        playerInput = GetComponent<PlayerInput>();
-        if (playerInput == null)
+        if (playerCamera != null)
         {
-            playerInput = GetComponentInParent<PlayerInput>();
+            normalFOV = playerCamera.fieldOfView;
         }
-        if (playerInput == null)
-        {
-            playerInput = FindFirstObjectByType<PlayerInput>();
-        }
-
-        if (playerInput == null) return;
-
-        // Get mouse movement
-        mouseMovement = FindFirstObjectByType<MouseMovement>();
-        if (mouseMovement != null)
-        {
-            originalMouseSensitivity = mouseMovement.mouseSensitivity;
-        }
-
-        // Setup input actions
-        if (playerInput?.actions != null)
-        {
-            aimAction = playerInput.actions["Aim"];
-            aimAction?.Enable();
-        }
-
-        // Setup crosshairs
-        SetCrosshairVisibility(false);
     }
 
     private void Update()
     {
-        UpdateCurrentWeapon();
         HandleAimInput();
         UpdateAiming();
     }
 
-    private void UpdateCurrentWeapon()
-    {
-        ModularWeapon previousWeapon = currentWeapon;
-        currentWeapon = null;
-        currentWeaponData = null;
-
-        if (WeaponManager.Instance?.GetCurrentWeapon() != null)
-        {
-            currentWeapon = WeaponManager.Instance.GetCurrentWeapon().GetComponent<ModularWeapon>();
-
-            if (currentWeapon != null && currentWeapon.isActiveWeapon)
-            {
-                currentWeaponData = currentWeapon.WeaponData;
-            }
-        }
-
-        // If we lost the weapon (dropped), stop aiming and reset FOV
-        if (previousWeapon != null && currentWeapon == null)
-        {
-            ForceStopAiming();
-            ResetCameraFOV();
-        }
-    }
-
     private void HandleAimInput()
     {
-        if (aimAction == null)
-        {
-            if (isAiming)
-            {
-                StopAiming();
-            }
-            return;
-        }
+        bool aimInput = Input.GetMouseButton(1); // Right mouse button
 
-        if (currentWeaponData?.canAim != true)
-        {
-            if (isAiming)
-            {
-                StopAiming();
-            }
-            return;
-        }
-
-        bool wantsToAim = aimAction.IsPressed();
-
-        if (wantsToAim && !isAiming)
+        if (aimInput && !isAiming)
         {
             StartAiming();
         }
-        else if (!wantsToAim && isAiming)
+        else if (!aimInput && isAiming)
         {
             StopAiming();
         }
     }
 
-    private void StartAiming()
+    public void StartAiming()
     {
-        if (currentWeaponData?.canAim != true || isAiming) return;
+        if (isAiming) return;
 
         isAiming = true;
 
-        // Reduce mouse sensitivity
-        if (mouseMovement != null)
+        // Get current weapon
+        if (WeaponManager.Instance != null)
         {
-            mouseMovement.mouseSensitivity = originalMouseSensitivity * aimMouseSensitivityMultiplier;
+            var weaponObj = WeaponManager.Instance.GetCurrentWeapon();
+            if (weaponObj != null)
+            {
+                currentWeapon = weaponObj.GetComponent<ModularWeapon>();
+                if (currentWeapon != null)
+                {
+                    originalWeaponPosition = currentWeapon.transform.localPosition;
+                    originalWeaponRotation = currentWeapon.transform.localEulerAngles;
+                }
+            }
         }
 
-        SetCrosshairVisibility(true);
+        Debug.Log("Started aiming");
     }
 
-    private void StopAiming()
+    public void StopAiming()
     {
         if (!isAiming) return;
 
         isAiming = false;
-
-        // Restore mouse sensitivity
-        if (mouseMovement != null)
-        {
-            mouseMovement.mouseSensitivity = originalMouseSensitivity;
-        }
-
-        SetCrosshairVisibility(false);
+        Debug.Log("Stopped aiming");
     }
 
-    // Force reset camera FOV to original
-    private void ResetCameraFOV()
+    public void ForceStopAiming()
     {
-        if (playerCamera != null)
-        {
-            playerCamera.fieldOfView = originalFOV;
-        }
+        StopAiming();
     }
 
     private void UpdateAiming()
     {
         if (playerCamera == null) return;
 
-        // FOV transition
-        if (currentWeaponData?.canAim == true)
+        float targetFOV = isAiming ? aimFOV : normalFOV;
+        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * aimSpeed);
+
+        // Update weapon position if we have one
+        if (currentWeapon != null)
         {
-            float targetFOV = isAiming ? currentWeaponData.aimFOV : originalFOV;
-            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, aimSpeed * Time.deltaTime);
+            Vector3 targetPosition = isAiming ? originalWeaponPosition + aimPositionOffset : originalWeaponPosition;
+            Vector3 targetRotation = isAiming ? originalWeaponRotation + aimRotationOffset : originalWeaponRotation;
+
+            currentWeapon.transform.localPosition = Vector3.Lerp(currentWeapon.transform.localPosition, targetPosition, Time.deltaTime * aimSpeed);
+            currentWeapon.transform.localEulerAngles = Vector3.Lerp(currentWeapon.transform.localEulerAngles, targetRotation, Time.deltaTime * aimSpeed);
         }
-
-        // Weapon slot positioning
-        if (currentWeapon?.transform.parent != null && currentWeaponData?.canAim == true)
-        {
-            Transform weaponSlot = currentWeapon.transform.parent;
-
-            Vector3 targetPos = isAiming ? currentWeaponData.aimPositionOffset : Vector3.zero;
-            Vector3 targetRot = isAiming ? currentWeaponData.aimRotationOffset : Vector3.zero;
-
-            weaponSlot.localPosition = Vector3.Lerp(weaponSlot.localPosition, targetPos, aimSpeed * Time.deltaTime);
-            weaponSlot.localRotation = Quaternion.Lerp(weaponSlot.localRotation, Quaternion.Euler(targetRot), aimSpeed * Time.deltaTime);
-        }
-    }
-
-    private void SetCrosshairVisibility(bool aiming)
-    {
-        if (normalCrosshair != null) normalCrosshair.SetActive(!aiming);
-        if (aimCrosshair != null) aimCrosshair.SetActive(aiming);
     }
 
     public float GetAccuracyMultiplier()
     {
-        return (isAiming && currentWeaponData != null) ? currentWeaponData.aimAccuracyMultiplier : 1f;
+        return isAiming ? accuracyMultiplier : 1f;
     }
 
-    public void ForceStopAiming()
+    public void SetCurrentWeapon(ModularWeapon weapon)
     {
-        if (isAiming)
+        currentWeapon = weapon;
+        if (weapon != null)
         {
-            StopAiming();
+            originalWeaponPosition = weapon.transform.localPosition;
+            originalWeaponRotation = weapon.transform.localEulerAngles;
         }
     }
-
-    private void OnDestroy()
-    {
-        aimAction?.Disable();
-    }
 }
+// end

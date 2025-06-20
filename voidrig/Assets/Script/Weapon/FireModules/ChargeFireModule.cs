@@ -2,22 +2,38 @@
 using UnityEngine;
 using System.Collections;
 
-public class ChargeFireModule : BaseFireModule
+public class ChargeFireModule : MonoBehaviour, IFireModule
 {
     [Header("Charge Settings")]
     public float maxChargeTime = 3f;
     public float minChargeTime = 0.5f;
     public AnimationCurve chargeDamageCurve = AnimationCurve.Linear(0, 1, 1, 3);
 
+    private ModularWeapon weapon;
     private float chargeStartTime = 0f;
     private bool isCharging = false;
+    private bool isFirePressed = false;
+    private bool wasFirePressed = false;
+    private float lastFireTime = -1f;
+    private bool isFiring = false;
 
-    protected override bool ShouldFire()
+    public void Initialize(ModularWeapon weapon)
     {
-        return false; // handled manually
+        this.weapon = weapon;
+        Debug.Log("ChargeFireModule initialized");
     }
 
-    public override void OnFireInput(bool isPressed, bool wasPressed)
+    public void OnWeaponActivated() { isCharging = false; isFiring = false; }
+    public void OnWeaponDeactivated() { isCharging = false; isFiring = false; }
+    public void OnUpdate() { }
+
+    public bool CanFire()
+    {
+        bool hasAmmo = weapon.GetAmmoModule()?.GetCurrentAmmo() > 0;
+        return hasAmmo && !isFiring;
+    }
+
+    public void OnFireInput(bool isPressed, bool wasPressed)
     {
         isFirePressed = isPressed;
         wasFirePressed = wasPressed;
@@ -26,7 +42,7 @@ public class ChargeFireModule : BaseFireModule
         {
             isCharging = true;
             chargeStartTime = Time.time;
-            weapon.SetAnimationTrigger("ChargeStart");
+            Debug.Log("Charge started");
         }
         else if (!isPressed && isCharging)
         {
@@ -39,7 +55,7 @@ public class ChargeFireModule : BaseFireModule
         }
     }
 
-    public override IEnumerator Fire()
+    public IEnumerator Fire()
     {
         isFiring = true;
         lastFireTime = Time.time;
@@ -52,7 +68,7 @@ public class ChargeFireModule : BaseFireModule
         var targetingModule = weapon.GetTargetingModule();
         var ammoModule = weapon.GetAmmoModule();
 
-        if (projectileModule != null && ammoModule != null)
+        if (projectileModule != null && ammoModule != null && ammoModule.ConsumeAmmo())
         {
             Vector3 baseDirection = weapon.CalculateBaseDirection();
             Vector3 finalDirection = targetingModule?.CalculateDirection(baseDirection) ?? baseDirection;
@@ -60,25 +76,21 @@ public class ChargeFireModule : BaseFireModule
             GameObject projectile = projectileModule.CreateProjectile(
                 weapon.FirePoint.position,
                 finalDirection,
-                weapon.WeaponData.bulletVelocity
+                100f
             );
 
-            ModularBullet bullet = projectile.GetComponent<ModularBullet>();
+            var bullet = projectile?.GetComponent<ModularBullet>();
             if (bullet != null)
             {
                 bullet.SetDamageMultiplier(damageMultiplier);
                 bullet.SetChargeLevel(chargeRatio);
             }
 
-            ammoModule.ConsumeAmmo();
-
-            weapon.SetAnimationTrigger("ChargeFire");
-            weapon.PlaySound(weapon.WeaponSound?.shootClip);
+            Debug.Log($"Charged shot fired with {chargeRatio:F2} charge level");
         }
 
         yield return new WaitForSeconds(0.3f);
         isFiring = false;
     }
 }
-
 //end

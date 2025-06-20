@@ -1,38 +1,78 @@
 //ExoticProjectileModule.cs
 using UnityEngine;
 
-public class ExoticProjectileModule : BaseProjectileModule
+public class ExoticProjectileModule : MonoBehaviour, IProjectileModule
 {
-    [Header("Exotic Settings")]
+    [Header("Exotic Projectile Settings")]
+    public GameObject projectilePrefab;
+    public float damage = 50f;
+    public float velocity = 180f;
+    public float lifetime = 4f;
+    public Color exoticColor = Color.magenta;
+
+    [Header("Exotic Properties")]
     public bool hasNegativeMass = true;
     public float gravityReversalStrength = 2f;
     public bool phasesToDifferentDimension = true;
 
-    public override GameObject CreateProjectile(Vector3 position, Vector3 direction, float velocity)
+    private ModularWeapon weapon;
+
+    public void Initialize(ModularWeapon weapon)
     {
-        GameObject projectile = InstantiateProjectile(position, direction, velocity);
+        this.weapon = weapon;
+        Debug.Log("ExoticProjectileModule initialized");
+    }
 
-        if (projectile != null)
+    public void OnWeaponActivated() { }
+    public void OnWeaponDeactivated() { }
+    public void OnUpdate() { }
+
+    public GameObject CreateProjectile(Vector3 position, Vector3 direction, float velocity)
+    {
+        if (projectilePrefab == null) return null;
+
+        GameObject projectile = Instantiate(projectilePrefab, position, Quaternion.LookRotation(direction));
+
+        // Set damage
+        var bullet = projectile.GetComponent<Bullet>();
+        if (bullet != null) bullet.damage = damage;
+
+        var modularBullet = projectile.GetComponent<ModularCompatibleBullet>();
+        if (modularBullet != null)
         {
-            var bullet = projectile.GetComponent<ModularBullet>();
-            bullet?.SetExoticProperties(hasNegativeMass, gravityReversalStrength, phasesToDifferentDimension);
-
-            // Exotic physics
-            ApplyExoticPhysics(projectile);
-            AddExoticEffects(projectile);
+            modularBullet.damage = damage;
+            modularBullet.projectileType = ProjectileType.Exotic;
         }
 
+        var fullBullet = projectile.GetComponent<ModularBullet>();
+        if (fullBullet != null)
+        {
+            fullBullet.SetExoticProperties(hasNegativeMass, gravityReversalStrength, phasesToDifferentDimension);
+        }
+
+        // Apply exotic physics
+        ApplyExoticPhysics(projectile, direction, velocity);
+
+        // Add exotic effects
+        AddExoticEffects(projectile);
+
+        Destroy(projectile, lifetime);
         return projectile;
     }
 
-    private void ApplyExoticPhysics(GameObject projectile)
+    private void ApplyExoticPhysics(GameObject projectile, Vector3 direction, float velocity)
     {
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
-        if (rb != null && hasNegativeMass)
+        if (rb != null)
         {
-            rb.useGravity = false;
-            // Add upward force to simulate negative mass
-            rb.AddForce(Vector3.up * gravityReversalStrength, ForceMode.Force);
+            rb.linearVelocity = direction * velocity;
+
+            if (hasNegativeMass)
+            {
+                rb.useGravity = false;
+                // Add upward force to simulate negative mass
+                rb.AddForce(Vector3.up * gravityReversalStrength, ForceMode.Force);
+            }
         }
     }
 
@@ -42,8 +82,9 @@ public class ExoticProjectileModule : BaseProjectileModule
         var renderer = projectile.GetComponent<Renderer>();
         if (renderer != null)
         {
-            renderer.material.color = Color.magenta;
-            // Add shader effects for reality distortion
+            renderer.material.color = exoticColor;
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", exoticColor * 2f);
         }
 
         // Add particle effects for dimensional phasing
@@ -51,10 +92,19 @@ public class ExoticProjectileModule : BaseProjectileModule
         if (particles != null)
         {
             var main = particles.main;
-            main.startColor = Color.magenta;
+            main.startColor = exoticColor;
             var emission = particles.emission;
             emission.rateOverTime = 50f;
         }
+
+        // Add light
+        var light = projectile.GetComponent<Light>();
+        if (light == null) light = projectile.AddComponent<Light>();
+        light.color = exoticColor;
+        light.intensity = 3f;
+        light.range = 5f;
     }
+
+    public ProjectileType GetProjectileType() => ProjectileType.Exotic;
 }
 //end

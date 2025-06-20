@@ -1,4 +1,4 @@
-//IWeaponModule.cs - Updated with all enums
+// IWeaponModule.cs
 using System;
 using UnityEngine;
 using System.Collections;
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 // Base interface for all weapon modules
 public interface IWeaponModule
 {
-    void Initialize(ModularWeapon weapon);
+    void Initialize(ModularWeapon weapon); // Keep original signature
     void OnWeaponActivated();
     void OnWeaponDeactivated();
     void OnUpdate();
