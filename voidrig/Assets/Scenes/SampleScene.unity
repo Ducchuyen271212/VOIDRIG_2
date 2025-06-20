@@ -7652,71 +7652,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 1106781187125368818, guid: cf15cd255b204c648ab944e476e1e96c, type: 3}
-  lifetimeOverride: -1
+  bulletLifetime: 3
+  bulletDamage: 7
   enableTrails: 1
-  trailMaterial: {fileID: 0}
   trailColor: {r: 1, g: 0, b: 0, a: 1}
   trailWidth: 0.1
   trailLength: 0.5
-  trailWidthCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: -0.9
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0.1
-      inSlope: -0.9
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  cornerVertices: 2
-  capVertices: 2
-  minVertexDistance: 0.01
-  autodestruct: 1
-  trailColorGradient:
-    serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 0, g: 0, b: 0, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 65535
-    ctime2: 0
-    ctime3: 0
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: -1
-    m_NumColorKeys: 2
-    m_NumAlphaKeys: 2
-  useGradient: 0
 --- !u!114 &8040597683205373727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7729,18 +7670,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de924d47cc1e7e43a8075d8eea6a4e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponName: 
-  weaponTag: 
+  weaponConfig: {fileID: 0}
+  availableFireModules: []
+  activeFireModuleIndex: 0
   firePoint: {fileID: 375081339754416125}
   weaponModel: {fileID: 1383109427721936369}
   spawnPosition: {x: 0, y: 0, z: 0}
   spawnRotation: {x: 0, y: 0, z: 0}
   isActiveWeapon: 0
-  gunDataHolder: {fileID: 0}
-  soundData: {fileID: 11400000, guid: 431cca0410cca16449af35e667cc0c7e, type: 2}
-  useManualDrop: 1
-  dropKey: 103
-  modeKey: 116
 --- !u!114 &8040597683205373728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7809,16 +7746,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a5e6ac5667cc364e93d403feb71f605, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Burst
-  description: 
-  fireMode: 1
-  overrideWeaponFireRate: 0
-  customFireRate: 0.1
-  overrideWeaponDamage: 0
-  damageMultiplier: 1
-  currentMode: 1
   burstCount: 3
   burstInterval: 0.1
+  burstCooldown: 0.3
+  enableDebugLogs: 1
 --- !u!114 &8040597683205373733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7831,13 +7762,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf66c6b454a3a5149a4a2f078737e2e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayName: Single
-  description: 
-  fireMode: 0
-  overrideWeaponFireRate: 0
-  customFireRate: 0.1
-  overrideWeaponDamage: 0
-  damageMultiplier: 1
+  fireRate: 0.3
 --- !u!114 &8040597683205373734
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7855,9 +7780,11 @@ MonoBehaviour:
   allowAuto: 0
   currentMode: 1
   currentModeIndex: 0
+  singleFireRate: 0.3
+  autoFireRate: 0.1
+  burstCooldown: 0.5
   burstCount: 3
   burstInterval: 0.1
-  autoFireRate: 0.1
   enableDebugLogs: 1
 --- !u!114 &8092663752411394056
 MonoBehaviour:
@@ -12683,18 +12610,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de924d47cc1e7e43a8075d8eea6a4e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponName: 
-  weaponTag: 
+  weaponConfig: {fileID: 0}
+  availableFireModules: []
+  activeFireModuleIndex: 0
   firePoint: {fileID: 2712970122142581316}
   weaponModel: {fileID: 6479284926572105328}
   spawnPosition: {x: 0, y: 0, z: 0}
   spawnRotation: {x: 0, y: 0, z: 0}
   isActiveWeapon: 0
-  gunDataHolder: {fileID: 431731272966727561, guid: 084759c249f13a649bafa4bd307b945a, type: 3}
-  soundData: {fileID: 11400000, guid: 431cca0410cca16449af35e667cc0c7e, type: 2}
-  useManualDrop: 1
-  dropKey: 103
-  modeKey: 116
 --- !u!54 &9171985932020837531
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12735,6 +12658,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseSpread: 1
+  aimingBonus: 0.5
   accuracyCurve:
     serializedVersion: 2
     m_Curve:
@@ -12848,71 +12772,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 1106781187125368818, guid: cf15cd255b204c648ab944e476e1e96c, type: 3}
-  lifetimeOverride: 1
+  bulletLifetime: 3
+  bulletDamage: 25
   enableTrails: 1
-  trailMaterial: {fileID: 0}
   trailColor: {r: 0.4980392, g: 1, b: 0.8313726, a: 1}
   trailWidth: 0.1
   trailLength: 0.1
-  trailWidthCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  cornerVertices: 2
-  capVertices: 2
-  minVertexDistance: 0.01
-  autodestruct: 1
-  trailColorGradient:
-    serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 0, g: 0, b: 0, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 65535
-    ctime2: 0
-    ctime3: 0
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: -1
-    m_NumColorKeys: 2
-    m_NumAlphaKeys: 2
-  useGradient: 0
 --- !u!114 &9171985932020837540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12929,6 +12794,7 @@ MonoBehaviour:
   spreadIntensity: 10
   tiltAngle: 90
   bulletLifetimeOverride: -1
+  fireRate: 0.8
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
