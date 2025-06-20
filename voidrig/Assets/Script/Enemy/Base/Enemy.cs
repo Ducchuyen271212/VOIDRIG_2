@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable
+public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable, ITriggerable
 {
     [field: SerializeField] public float maxHealth { get; set; } = 10f;
     public float currentHealth { get; set; }
@@ -20,6 +20,11 @@ public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable
     public float IdleMovementSpeed = 10f;
     #endregion
 
+    #region Chase State
+    public bool IsAggro { get; set; }
+    public bool IsInAttackRange { get; set; }
+    #endregion
+
     private void Awake()
     {
         StateMachine = new EnemyStateMachine();
@@ -27,6 +32,8 @@ public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable
         IdleState = new IdleState(this, StateMachine);
         ChaseState = new ChaseState(this, StateMachine);
         AttackState = new AttackState(this, StateMachine);
+
+        StateMachine.Initialize(IdleState);
     }
 
     private void Start()
@@ -35,12 +42,13 @@ public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable
 
         RB = GetComponent<Rigidbody>();
 
-        StateMachine.Initialize(IdleState);
+        StateMachine.ChangeState(IdleState);
     }
 
     private void Update()
     {
         StateMachine.CurrentState.FrameUpdate();
+        //Debug.Log("The current state is: " + StateMachine.CurrentState);
     }
 
     private void FixedUpdate()
@@ -72,5 +80,15 @@ public class Enemy : MonoBehaviour, IDamagable, IEnemyMovable
     public void Rotate(Vector3 direction, float speed)
     {
 
+    }
+
+    public void setAggroStatus(bool isAggroed)
+    {
+        IsAggro = isAggroed;
+    }
+
+    public void setAttackStatus(bool isAttacking)
+    {
+        IsInAttackRange = isAttacking;
     }
 }
