@@ -8,14 +8,6 @@ using UnityEngine.InputSystem;
 
 public class ModularWeapon : MonoBehaviour
 {
-    [Header("=== WEAPON CONFIG ===")]
-    public ModularWeaponConfig weaponConfig;
-
-    [Header("=== MODULE MANAGEMENT ===")]
-    [Tooltip("Only ONE fire module will be active at a time")]
-    public List<MonoBehaviour> availableFireModules = new List<MonoBehaviour>();
-    [SerializeField] private int activeFireModuleIndex = 0;
-
     [Header("=== REFERENCES ===")]
     public Transform firePoint;
     public Transform weaponModel;
@@ -23,11 +15,33 @@ public class ModularWeapon : MonoBehaviour
     public Vector3 spawnRotation;
 
     [Header("=== STATE ===")]
-    public bool isActiveWeapon = false;
+    private bool _isActiveWeapon = false;
+    public bool isActiveWeapon
+    {
+        get => _isActiveWeapon;
+        set
+        {
+            if (_isActiveWeapon != value)
+            {
+                _isActiveWeapon = value;
+
+                if (_isActiveWeapon && transform.parent != null)
+                {
+                    Debug.Log("Weapon activated - setting up input");
+                    SetupInputActions();
+                }
+                else if (!_isActiveWeapon)
+                {
+                    Debug.Log("Weapon deactivated - disabling input");
+                    DisableInputActions();
+                }
+            }
+        }
+    }
 
     // === MODULE REFERENCES ===
     private List<IWeaponModule> allModules = new List<IWeaponModule>();
-    private IFireModule activeFireModule;
+    private IFireModule fireModule; // Single fire module - let the module handle its own modes
     private IProjectileModule projectileModule;
     private IAmmoModule ammoModule;
     private ITargetingModule targetingModule;
@@ -45,7 +59,6 @@ public class ModularWeapon : MonoBehaviour
     private InputAction dropAction;
 
     // === PROPERTIES ===
-    public ModularWeaponConfig Config => weaponConfig;
     public Transform FirePoint => firePoint;
     public Animator WeaponAnimator => animator;
     public AudioSource WeaponAudio => audioSource;
@@ -57,15 +70,6 @@ public class ModularWeapon : MonoBehaviour
         audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
 
         DiscoverModules();
-        SetupFireModules();
-    }
-
-    private void Start()
-    {
-        if (weaponConfig != null)
-        {
-            InitializeModules();
-        }
     }
 
     private void OnEnable()
@@ -85,7 +89,33 @@ public class ModularWeapon : MonoBehaviour
 
     private void Update()
     {
-        if (!isActiveWeapon || weaponConfig == null) return;
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            Debug.Log("=== WEAPON DEBUG ===");
+            Debug.Log($"isActiveWeapon: {isActiveWeapon}");
+            Debug.Log($"Parent: {transform.parent?.name ?? "NO PARENT"}");
+            Debug.Log($"PlayerInput found: {playerInput != null}");
+
+            // Input Actions Status
+            Debug.Log($"Attack action: {attackAction?.name ?? "NULL"} | Enabled: {attackAction?.enabled ?? false}");
+            Debug.Log($"Reload action: {reloadAction?.name ?? "NULL"} | Enabled: {reloadAction?.enabled ?? false}");
+            Debug.Log($"SwitchMode action: {switchModeAction?.name ?? "NULL"} | Enabled: {switchModeAction?.enabled ?? false}");
+            Debug.Log($"DropItem action: {dropAction?.name ?? "NULL"} | Enabled: {dropAction?.enabled ?? false}");
+
+            // Module Status
+            Debug.Log($"Fire Module: {fireModule?.GetType().Name ?? "NULL"}");
+            Debug.Log($"Projectile Module: {projectileModule?.GetType().Name ?? "NULL"}");
+            Debug.Log($"Ammo Module: {ammoModule?.GetType().Name ?? "NULL"}");
+            Debug.Log($"Can Reload: {ammoModule?.CanReload() ?? false}");
+            Debug.Log($"Current Ammo: {ammoModule?.GetCurrentAmmo() ?? -1}");
+            Debug.Log($"Total Modules: {allModules.Count}");
+
+            // Collider Status
+            var collider = GetComponent<Collider>();
+            Debug.Log($"Collider enabled: {collider?.enabled ?? false}");
+        }
+
+        if (!isActiveWeapon) return;
 
         HandleInput();
         NotifyModules(module => module.OnUpdate());
@@ -106,32 +136,14 @@ public class ModularWeapon : MonoBehaviour
         Debug.Log($"Discovered {allModules.Count} modules");
     }
 
-    private void SetupFireModules()
-    {
-        // Auto-discover fire modules if list is empty
-        if (availableFireModules.Count == 0)
-        {
-            var fireModules = GetComponentsInChildren<MonoBehaviour>()
-                .Where(m => m is IFireModule)
-                .ToList();
-
-            availableFireModules.AddRange(fireModules);
-            Debug.Log($"Auto-discovered {fireModules.Count} fire modules");
-        }
-
-        // Disable all fire modules except the active one
-        ActivateFireModule(activeFireModuleIndex);
-    }
-
     public void RegisterModule(IWeaponModule module)
     {
         if (allModules.Contains(module)) return;
 
         allModules.Add(module);
 
-        // Don't auto-register fire modules - we manage them manually
-        if (module is IFireModule) return;
-
+        // Register specific module types
+        if (module is IFireModule fire) fireModule = fire;
         if (module is IProjectileModule projectile) projectileModule = projectile;
         if (module is IAmmoModule ammo) ammoModule = ammo;
         if (module is ITargetingModule targeting) targetingModule = targeting;
@@ -140,88 +152,77 @@ public class ModularWeapon : MonoBehaviour
         module.Initialize(this);
     }
 
-    // === FIRE MODULE MANAGEMENT ===
-    private void ActivateFireModule(int index)
-    {
-        if (availableFireModules.Count == 0) return;
-
-        // Disable current fire module
-        if (activeFireModule != null)
-        {
-            (activeFireModule as MonoBehaviour).enabled = false;
-            activeFireModule.OnWeaponDeactivated();
-        }
-
-        // Clamp index
-        activeFireModuleIndex = Mathf.Clamp(index, 0, availableFireModules.Count - 1);
-
-        // Enable new fire module
-        var newModule = availableFireModules[activeFireModuleIndex];
-        if (newModule != null)
-        {
-            newModule.enabled = true;
-            activeFireModule = newModule as IFireModule;
-
-            if (activeFireModule != null)
-            {
-                activeFireModule.Initialize(this);
-                if (isActiveWeapon)
-                {
-                    activeFireModule.OnWeaponActivated();
-                }
-            }
-
-            Debug.Log($"Activated fire module: {newModule.GetType().Name}");
-        }
-    }
-
-    public void SwitchFireModule()
-    {
-        if (availableFireModules.Count <= 1) return;
-
-        int nextIndex = (activeFireModuleIndex + 1) % availableFireModules.Count;
-        ActivateFireModule(nextIndex);
-
-        PlaySound(weaponConfig?.modeSwitchSound);
-    }
-
     // === INITIALIZATION ===
     private void InitializeModules()
     {
         NotifyModules(module => module.Initialize(this));
-
-        // Initialize active fire module
-        if (activeFireModule != null)
-        {
-            activeFireModule.Initialize(this);
-        }
     }
 
     private void SetupInputActions()
     {
-        playerInput = GetComponentInParent<PlayerInput>() ?? FindFirstObjectByType<PlayerInput>();
+        // Try multiple ways to find PlayerInput
+        playerInput = GetComponentInParent<PlayerInput>() ??
+                     FindFirstObjectByType<PlayerInput>();
+
+        if (playerInput == null && WeaponManager.Instance?.player != null)
+        {
+            playerInput = WeaponManager.Instance.player.GetComponent<PlayerInput>();
+        }
+
+        if (playerInput == null)
+        {
+            PlayerInput[] allInputs = FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
+            if (allInputs.Length > 0) playerInput = allInputs[0];
+        }
+
+        Debug.Log($"PlayerInput search result: {playerInput != null}");
 
         if (playerInput?.actions != null)
         {
-            try { attackAction = playerInput.actions["Attack"]; attackAction?.Enable(); }
+            try
+            {
+                attackAction = playerInput.actions["Attack"];
+                attackAction?.Enable();
+                Debug.Log($"Attack action found: {attackAction != null}");
+            }
             catch { Debug.LogError("Attack action not found"); }
 
-            try { reloadAction = playerInput.actions["Reload"]; reloadAction?.Enable(); }
+            try
+            {
+                reloadAction = playerInput.actions["Reload"];
+                reloadAction?.Enable();
+                Debug.Log($"Reload action found: {reloadAction != null}");
+            }
             catch { Debug.LogError("Reload action not found"); }
 
-            try { switchModeAction = playerInput.actions["SwitchMode"]; switchModeAction?.Enable(); }
+            try
+            {
+                switchModeAction = playerInput.actions["SwitchMode"];
+                switchModeAction?.Enable();
+                Debug.Log($"SwitchMode action found: {switchModeAction != null}");
+            }
             catch { Debug.LogError("SwitchMode action not found"); }
 
-            try { dropAction = playerInput.actions["DropItem"]; dropAction?.Enable(); }
+            try
+            {
+                dropAction = playerInput.actions["DropItem"];
+                dropAction?.Enable();
+                Debug.Log($"DropItem action found: {dropAction != null}");
+            }
             catch { Debug.LogError("DropItem action not found"); }
 
-            var collider = GetComponent<Collider>();
-            if (collider != null) collider.enabled = false;
+            // Collider stays enabled always (always-on mode)
+            Debug.Log("Weapon collider kept enabled (always-on mode)");
 
             isActiveWeapon = true;
             NotifyModules(module => module.OnWeaponActivated());
 
-            Debug.Log($"=== WEAPON ACTIVATED: {weaponConfig?.weaponName} ===");
+            Debug.Log("=== WEAPON ACTIVATED ===");
+            Debug.Log($"All input actions enabled: Attack={attackAction?.enabled}, Reload={reloadAction?.enabled}");
+        }
+        else
+        {
+            Debug.LogError("PlayerInput or actions not found! Cannot activate weapon.");
         }
     }
 
@@ -236,15 +237,17 @@ public class ModularWeapon : MonoBehaviour
     // === INPUT HANDLING ===
     private void HandleInput()
     {
-        // Fire module switching
-        if (switchModeAction?.WasPressedThisFrame() == true || Input.GetKeyDown(KeyCode.T))
+        // Fire module mode switching - let the fire module handle it
+        if (switchModeAction?.WasPressedThisFrame() == true)
         {
-            SwitchFireModule();
+            Debug.Log("SwitchMode pressed - delegating to fire module");
+            // FlexibleFireModule will handle this in its OnUpdate
         }
 
         // Reload
         if (reloadAction?.WasPressedThisFrame() == true && ammoModule != null)
         {
+            Debug.Log("Reload pressed");
             if (ammoModule.CanReload())
             {
                 StartCoroutine(ammoModule.Reload());
@@ -252,18 +255,19 @@ public class ModularWeapon : MonoBehaviour
         }
 
         // Drop weapon
-        if (dropAction?.WasPressedThisFrame() == true || Input.GetKeyDown(KeyCode.G))
+        if (dropAction?.WasPressedThisFrame() == true)
         {
+            Debug.Log("Drop pressed");
             DropWeapon();
         }
 
-        // Fire input - pass to active fire module
-        if (activeFireModule != null)
+        // Fire input - pass to fire module
+        if (fireModule != null)
         {
-            bool isPressed = attackAction?.IsPressed() ?? Input.GetMouseButton(0);
-            bool wasPressed = attackAction?.WasPressedThisFrame() ?? Input.GetMouseButtonDown(0);
+            bool isPressed = attackAction?.IsPressed() ?? false;
+            bool wasPressed = attackAction?.WasPressedThisFrame() ?? false;
 
-            activeFireModule.OnFireInput(isPressed, wasPressed);
+            fireModule.OnFireInput(isPressed, wasPressed);
         }
     }
 
@@ -283,19 +287,6 @@ public class ModularWeapon : MonoBehaviour
             {
                 Debug.LogError($"Error in module {module?.GetType().Name}: {e.Message}");
             }
-        }
-
-        // Also notify active fire module
-        try
-        {
-            if (activeFireModule != null)
-            {
-                action?.Invoke(activeFireModule);
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Error in fire module {activeFireModule?.GetType().Name}: {e.Message}");
         }
     }
 
@@ -344,25 +335,87 @@ public class ModularWeapon : MonoBehaviour
 
     private void DropWeapon()
     {
-        var collider = GetComponent<Collider>();
-        if (collider != null) collider.enabled = true;
+        Debug.Log("=== ULTIMATE DROP WEAPON FIX ===");
 
+        // STEP 1: Force stop ALL aiming/scoping immediately
+        if (AimingManager.Instance != null)
+        {
+            AimingManager.Instance.ForceStopAiming();
+            Debug.Log("Force stopped aiming");
+        }
+
+        // STEP 2: Deactivate ALL abilities (especially scope)
+        var abilities = GetAbilityModules();
+        foreach (var ability in abilities)
+        {
+            if (ability is ScopeAbility scope && scope.IsScoped())
+            {
+                scope.ManualDeactivateScope();
+                Debug.Log("Force deactivated scope ability");
+            }
+        }
+
+        // STEP 3: Clear ammo UI immediately
+        if (AmmoManager.Instance?.ammoDisplay != null)
+        {
+            AmmoManager.Instance.ammoDisplay.text = "-- / --";
+            Debug.Log("Cleared ammo UI");
+        }
+
+        // STEP 4: Wait a frame to ensure all systems have processed the deactivation
+        StartCoroutine(FinishDrop());
+    }
+
+    private System.Collections.IEnumerator FinishDrop()
+    {
+        yield return null; // Wait one frame
+
+        Debug.Log("=== FINISHING DROP ===");
+
+        // Deactivate weapon systems
         isActiveWeapon = false;
         NotifyModules(module => module.OnWeaponDeactivated());
         DisableInputActions();
 
+        // Remove from parent
+        Transform originalParent = transform.parent;
         transform.SetParent(null);
+        Debug.Log($"Removed from parent: {originalParent?.name}");
 
+        // Ensure collider is enabled
+        var collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = true;
+            Debug.Log($"Collider enabled: {collider.enabled}");
+        }
+
+        // Reset and enable physics with full settings
         var rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
+            // Reset all physics properties
             rb.isKinematic = false;
-            rb.AddForce(Camera.main.transform.forward * 3f + Vector3.up * 1f, ForceMode.Impulse);
+            rb.useGravity = true;
+            rb.constraints = RigidbodyConstraints.None;
+            rb.linearVelocity = Vector3.zero; // Clear any existing velocity
+            rb.angularVelocity = Vector3.zero; // Clear any existing rotation
+
+            // Add drop force
+            Vector3 dropForce = Camera.main.transform.forward * 3f + Vector3.up * 1f;
+            rb.AddForce(dropForce, ForceMode.Impulse);
+
+            Debug.Log($"Physics reset - isKinematic: {rb.isKinematic}, useGravity: {rb.useGravity}, velocity: {rb.linearVelocity}");
         }
 
-        if (animator != null) animator.enabled = false;
+        // Disable animator
+        if (animator != null)
+        {
+            animator.enabled = false;
+            Debug.Log("Animator disabled");
+        }
 
-        Debug.Log($"Dropped weapon");
+        Debug.Log("=== WEAPON DROP COMPLETED ===");
     }
 
     // === GETTERS ===
@@ -371,29 +424,20 @@ public class ModularWeapon : MonoBehaviour
         foreach (var module in allModules)
             if (module is T typedModule) return typedModule;
 
-        return activeFireModule as T;
+        return fireModule as T;
     }
 
-    public IFireModule GetFireModule() => activeFireModule;
+    public IFireModule GetFireModule() => fireModule;
     public IProjectileModule GetProjectileModule() => projectileModule;
     public IAmmoModule GetAmmoModule() => ammoModule;
     public ITargetingModule GetTargetingModule() => targetingModule;
     public List<IAbilityModule> GetAbilityModules() => abilityModules;
 
     // === INSPECTOR METHODS ===
-    [ContextMenu("Switch Fire Module")]
-    public void EditorSwitchFireModule() => SwitchFireModule();
-
     [ContextMenu("Refresh Modules")]
     public void EditorRefreshModules()
     {
         DiscoverModules();
-        SetupFireModules();
-    }
-
-    public string GetActiveFireModuleName()
-    {
-        return activeFireModule?.GetType().Name ?? "None";
     }
 
     private void OnValidate()
@@ -403,9 +447,6 @@ public class ModularWeapon : MonoBehaviour
 
         if (weaponModel == null)
             weaponModel = transform.Find("GunModel");
-
-        // Clamp active fire module index
-        if (availableFireModules.Count > 0)
-            activeFireModuleIndex = Mathf.Clamp(activeFireModuleIndex, 0, availableFireModules.Count - 1);
     }
 }
+// end

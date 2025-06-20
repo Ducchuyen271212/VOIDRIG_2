@@ -7637,8 +7637,38 @@ MonoBehaviour:
     duration: 0
     requiresTarget: 0
     abilityEffect: {fileID: 0}
-  scopeZoomFOV: 20
+  scopeZoomLevel: 30
   accuracyBonus: 0.2
+  scopePositionOffset: {x: -0.5, y: 0.05, z: 0.25}
+  scopeRotationOffset: {x: 90, y: 0, z: 0}
+  scopeTransitionTime: 0.3
+  scopeTransitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  scopeOverlay: {fileID: 0}
+  showScopeOverlay: 1
+  autoActivateOnAim: 1
 --- !u!114 &8040597683205373725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7653,7 +7683,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 1106781187125368818, guid: cf15cd255b204c648ab944e476e1e96c, type: 3}
   bulletLifetime: 3
-  bulletDamage: 7
+  bulletDamage: 10
   enableTrails: 1
   trailColor: {r: 1, g: 0, b: 0, a: 1}
   trailWidth: 0.1
@@ -7670,14 +7700,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de924d47cc1e7e43a8075d8eea6a4e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponConfig: {fileID: 0}
-  availableFireModules: []
-  activeFireModuleIndex: 0
   firePoint: {fileID: 375081339754416125}
   weaponModel: {fileID: 1383109427721936369}
   spawnPosition: {x: 0, y: 0, z: 0}
   spawnRotation: {x: 0, y: 0, z: 0}
-  isActiveWeapon: 0
 --- !u!114 &8040597683205373728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7690,7 +7716,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e85d27067df38745a3c4d8297df80dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reloadLiftAngle: 45
+  reloadLiftAngle: 5
   animationSpeed: 2
   reloadCurve:
     serializedVersion: 2
@@ -7749,7 +7775,6 @@ MonoBehaviour:
   burstCount: 3
   burstInterval: 0.1
   burstCooldown: 0.3
-  enableDebugLogs: 1
 --- !u!114 &8040597683205373733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7757,7 +7782,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf66c6b454a3a5149a4a2f078737e2e9, type: 3}
   m_Name: 
@@ -7770,7 +7795,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3409472036965767687}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc9e20b79b0f5f84fa9c4cd0bf7fe935, type: 3}
   m_Name: 
@@ -7894,7 +7919,6 @@ GameObject:
   - component: {fileID: 9171985932020837530}
   - component: {fileID: 9171985932020837539}
   - component: {fileID: 9171985932020837534}
-  - component: {fileID: 9171985932020837535}
   - component: {fileID: 9171985932020837536}
   - component: {fileID: 9171985932020837538}
   - component: {fileID: 9171985932020837540}
@@ -12610,14 +12634,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de924d47cc1e7e43a8075d8eea6a4e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponConfig: {fileID: 0}
-  availableFireModules: []
-  activeFireModuleIndex: 0
   firePoint: {fileID: 2712970122142581316}
   weaponModel: {fileID: 6479284926572105328}
   spawnPosition: {x: 0, y: 0, z: 0}
   spawnRotation: {x: 0, y: 0, z: 0}
-  isActiveWeapon: 0
 --- !u!54 &9171985932020837531
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12683,26 +12703,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &9171985932020837535
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8501105910929010262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7c6ef9564d35b04ba44602046f8c3e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  abilityData:
-    abilityName: 
-    cooldown: 5
-    duration: 0
-    requiresTarget: 0
-    abilityEffect: {fileID: 0}
-  scopeZoomFOV: 20
-  accuracyBonus: 0.2
 --- !u!114 &9171985932020837536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12757,7 +12757,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  weaponPivot: {fileID: 1211035333}
+  weaponPivot: {fileID: 0}
   autoFindWeaponModel: 1
 --- !u!114 &9171985932020837539
 MonoBehaviour:

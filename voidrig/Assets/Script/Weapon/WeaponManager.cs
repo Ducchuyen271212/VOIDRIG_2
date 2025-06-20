@@ -69,13 +69,21 @@ public class WeaponManager : MonoBehaviour
 
     private void HandleInput()
     {
-        if (switchWeaponAction?.WasPressedThisFrame() == true) SwitchToNextSlot();
+        // Switch to next weapon using InputSystem
+        if (switchWeaponAction?.WasPressedThisFrame() == true)
+        {
+            SwitchToNextSlot();
+        }
 
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToSlot(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToSlot(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchToSlot(2);
-        if (Input.GetKeyDown(KeyCode.Alpha4)) SwitchToSlot(3);
-        if (Input.GetKeyDown(KeyCode.Alpha5)) SwitchToSlot(4);
+        // Direct slot switching using InputSystem
+        if (playerInput?.actions != null)
+        {
+            if (playerInput.actions["Slot1"]?.WasPressedThisFrame() == true) SwitchToSlot(0);
+            if (playerInput.actions["Slot2"]?.WasPressedThisFrame() == true) SwitchToSlot(1);
+            if (playerInput.actions["Slot3"]?.WasPressedThisFrame() == true) SwitchToSlot(2);
+            if (playerInput.actions["Slot4"]?.WasPressedThisFrame() == true) SwitchToSlot(3);
+            if (playerInput.actions["Slot5"]?.WasPressedThisFrame() == true) SwitchToSlot(4);
+        }
     }
 
     private void SwitchToSlot(int index)
@@ -148,10 +156,10 @@ public class WeaponManager : MonoBehaviour
         weaponObject.transform.SetParent(activeWeaponSlot.transform, false);
 
         // Wait a frame for initialization to complete
-        StartCoroutine(CompleteWeaponPickup(modularWeapon, weaponObject));
+        StartCoroutine(WeaponPickup(modularWeapon, weaponObject));
     }
 
-    private IEnumerator CompleteWeaponPickup(ModularWeapon modularWeapon, GameObject weaponObject)
+    private IEnumerator WeaponPickup(ModularWeapon modularWeapon, GameObject weaponObject)
     {
         yield return null; // Wait one frame
 
@@ -166,8 +174,17 @@ public class WeaponManager : MonoBehaviour
             animator.enabled = true;
         }
 
-        // Activate weapon
+        // Activate weapon - this should trigger OnEnable and SetupInputActions
         modularWeapon.isActiveWeapon = true;
+
+        // Force the weapon to setup input actions if it hasn't already
+        // This ensures the weapon is fully activated on pickup
+        if (modularWeapon.gameObject.activeInHierarchy)
+        {
+            modularWeapon.enabled = false;
+            yield return null;
+            modularWeapon.enabled = true;
+        }
 
         // Update UI
         yield return UpdateAmmoUI(modularWeapon);
@@ -176,7 +193,7 @@ public class WeaponManager : MonoBehaviour
         Outline outline = weaponObject.GetComponent<Outline>();
         if (outline != null) outline.enabled = false;
 
-        Debug.Log("Weapon pickup complete");
+        Debug.Log("Weapon pickup complete - input should be ready");
     }
 
     private IEnumerator UpdateAmmoUI(ModularWeapon weapon)

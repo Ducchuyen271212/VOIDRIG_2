@@ -1,4 +1,4 @@
-// FlexibleFireModule.cs
+// FlexibleFireModule.cs - Complete updated version with InputSystem
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
     {
         this.weapon = weapon;
         SetupAvailableModes();
-        DebugLog($"FlexibleFireModule initialized with {availableModes.Count} modes");
+        DebugLog($"FlexibleFireModule initialized with {availableModes.Count} modes - Current: {currentMode}");
     }
 
     private void SetupAvailableModes()
@@ -73,9 +73,14 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
 
     public void OnUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.T))
+        // Handle mode switching via InputSystem - check the weapon's switchModeAction
+        if (weapon.PlayerInputRef?.actions != null)
         {
-            SwitchMode();
+            var switchAction = weapon.PlayerInputRef.actions["SwitchMode"];
+            if (switchAction?.WasPressedThisFrame() == true)
+            {
+                SwitchMode();
+            }
         }
     }
 
@@ -90,6 +95,11 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
     {
         isFirePressed = isPressed;
         wasFirePressed = wasPressed;
+
+        if (wasPressed)
+        {
+            DebugLog($"Fire input received - Mode: {currentMode}, CanFire: {CanFire()}");
+        }
 
         switch (currentMode)
         {
@@ -119,7 +129,7 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
 
     public IEnumerator Fire()
     {
-        yield break;
+        yield break; // Not used - specific fire methods handle this
     }
 
     private IEnumerator FireSingle()
@@ -129,7 +139,7 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         if (FireProjectile())
         {
             lastFireTime = Time.time;
-            PlayFireEffects();
+            DebugLog("Single shot fired");
         }
 
         yield return new WaitForSeconds(singleFireRate);
@@ -148,7 +158,9 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
             if (weapon.GetAmmoModule().GetCurrentAmmo() <= 0) break;
 
             if (FireProjectile())
-                PlayFireEffects();
+            {
+                DebugLog($"Burst shot {i + 1}/{burstCount} fired");
+            }
 
             if (i < shotsToFire - 1)
                 yield return new WaitForSeconds(burstInterval);
@@ -159,11 +171,13 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
 
         isBursting = false;
         isFiring = false;
+        DebugLog("Burst complete");
     }
 
     private IEnumerator FireAuto()
     {
         isFiring = true;
+        DebugLog("Auto fire started");
 
         while (isFirePressed && weapon.GetAmmoModule().GetCurrentAmmo() > 0)
         {
@@ -171,7 +185,6 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
             {
                 if (FireProjectile())
                 {
-                    PlayFireEffects();
                     lastFireTime = Time.time;
                 }
             }
@@ -179,6 +192,7 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         }
 
         StopAutoFire();
+        DebugLog("Auto fire stopped");
     }
 
     private bool FireProjectile()
@@ -199,11 +213,6 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         );
 
         return true;
-    }
-
-    private void PlayFireEffects()
-    {
-        Debug.Log("Fire effects played");
     }
 
     private float GetCurrentFireRate()
@@ -251,5 +260,9 @@ public class FlexibleFireModule : MonoBehaviour, IFireModule
         if (enableDebugLogs)
             Debug.Log($"[FlexibleFireModule] {message}");
     }
+
+    // Public getters for debugging
+    public string GetCurrentModeName() => currentMode.ToString();
+    public int GetCurrentModeIndex() => currentModeIndex;
 }
 // end
