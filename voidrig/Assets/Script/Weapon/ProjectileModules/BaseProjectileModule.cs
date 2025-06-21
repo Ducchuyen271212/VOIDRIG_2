@@ -41,11 +41,11 @@ public abstract class BaseProjectileModule : MonoBehaviour, IProjectileModule
             modularBullet.projectileType = projectileType;
         }
 
-        // Apply velocity
+        // Apply velocity - USE THIS MODULE'S VELOCITY, NOT THE PARAMETER
         var rb = projectile.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = direction * velocity;
+            rb.linearVelocity = direction * this.velocity; // Use module's velocity setting
         }
 
         // Destroy after lifetime

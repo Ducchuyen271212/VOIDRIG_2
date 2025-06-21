@@ -1,3 +1,4 @@
+// PhysicalProjectileModule.cs
 using UnityEngine;
 
 public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
@@ -6,6 +7,10 @@ public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
     public GameObject bulletPrefab;
     public float bulletLifetime = 3f;
     public float bulletDamage = 25f;
+
+    [Header("Bullet Speed")]
+    [Tooltip("Speed of the bullet in units per second")]
+    public float bulletSpeed = 100f;
 
     [Header("Trail Settings")]
     public bool enableTrails = true;
@@ -18,7 +23,7 @@ public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
     public void Initialize(ModularWeapon weapon)
     {
         this.weapon = weapon;
-        Debug.Log("PhysicalProjectileModule initialized");
+        Debug.Log($"PhysicalProjectileModule initialized - Speed: {bulletSpeed}, Damage: {bulletDamage}");
     }
 
     public void OnWeaponActivated() { }
@@ -43,11 +48,18 @@ public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
             bulletScript.damage = bulletDamage;
         }
 
-        // Apply velocity
+        var modularBullet = bullet.GetComponent<ModularCompatibleBullet>();
+        if (modularBullet != null)
+        {
+            modularBullet.damage = bulletDamage;
+            modularBullet.projectileType = ProjectileType.Physical;
+        }
+
+        // Apply velocity using the module's bulletSpeed instead of passed velocity
         var rb = bullet.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = direction * velocity;
+            rb.linearVelocity = direction * bulletSpeed;
         }
 
         // Add trail if enabled
@@ -59,7 +71,7 @@ public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
         // Set lifetime
         Destroy(bullet, bulletLifetime);
 
-        Debug.Log($"Created bullet with {bulletLifetime}s lifetime");
+        Debug.Log($"Created bullet with {bulletLifetime}s lifetime at {bulletSpeed} speed");
         return bullet;
     }
 
@@ -81,5 +93,47 @@ public class PhysicalProjectileModule : MonoBehaviour, IProjectileModule
     }
 
     public ProjectileType GetProjectileType() => ProjectileType.Physical;
+
+    // Preset configurations
+    [ContextMenu("Preset: Assault Rifle")]
+    public void PresetAssaultRifle()
+    {
+        bulletSpeed = 200f;
+        bulletDamage = 25f;
+        bulletLifetime = 3f;
+        enableTrails = true;
+        trailColor = Color.yellow;
+    }
+
+    [ContextMenu("Preset: Sniper Rifle")]
+    public void PresetSniperRifle()
+    {
+        bulletSpeed = 400f;
+        bulletDamage = 100f;
+        bulletLifetime = 5f;
+        enableTrails = true;
+        trailColor = Color.cyan;
+        trailLength = 1f;
+    }
+
+    [ContextMenu("Preset: SMG")]
+    public void PresetSMG()
+    {
+        bulletSpeed = 150f;
+        bulletDamage = 15f;
+        bulletLifetime = 2f;
+        enableTrails = true;
+        trailColor = Color.white;
+        trailWidth = 0.05f;
+    }
+
+    [ContextMenu("Preset: Pistol")]
+    public void PresetPistol()
+    {
+        bulletSpeed = 120f;
+        bulletDamage = 20f;
+        bulletLifetime = 2.5f;
+        enableTrails = false;
+    }
 }
 // end
